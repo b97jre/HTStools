@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/extra.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/xerces.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/jprogram.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/jfreechart-1.0.9.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/jcommon-1.0.12.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/flanagan.jar"/>
+	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/commons-math-1.2.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
