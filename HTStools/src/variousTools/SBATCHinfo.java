@@ -4,6 +4,7 @@ import java.util.Hashtable;
 
 import general.ExtendedWriter;
 import general.Functions;
+import general.IOTools;
 
 public class SBATCHinfo {
 
@@ -205,6 +206,11 @@ public class SBATCHinfo {
 
 	public void printSBATCHinfoCore(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
 
+		
+		if(IOTools.isDir(directory+"/reports")){
+			IOTools.mkDir(directory+"/reports");
+		}
+		
 		String jobName = ID+"_"+program+"_"+timestamp;
 
 		EW.println("#! /bin/bash -l");
