@@ -46,24 +46,19 @@ public class FastQCSBATCH {
 		SBATCHinfo sbatch = new SBATCHinfo();
 		if(!sbatch.addSBATCHinfo(T)) allPresent = false;
 
-		if(T.containsKey("dataDir"))
-			inDir= Functions.getValue(T, "dataDir", ".");
+		if(T.containsKey("-i"))
+			inDir= Functions.getValue(T, "-i", ".");
 		else{
-			System.out.println("must contain inDirectory -dataDir");
+			System.out.println("must contain inDirectory -i");
 			allPresent = false;
 		}
-		if(T.containsKey("pDir"))
-			projectDir= Functions.getValue(T, "pDir", ".");
-		else{
-			System.out.println("must contain projectDirectory -pDir");
-			allPresent = false;
-		}
+		if(T.containsKey("-pDir"))
+			projectDir= Functions.getValue(T, "-pDir", IOTools.getCurrentPath());
 
-		if(T.containsKey("time"))
-			time = Functions.getValue(T, "time", ".");
+		if(T.containsKey("-t"))
+			time = Functions.getValue(T, "-t", "15:00");
 		else{
-			System.out.println("must contain likely time -time");
-			allPresent = false;
+			System.out.println("must contain likely time -t now set to default 15 minutes");
 		}
 
 		if(allPresent)
@@ -77,6 +72,7 @@ public class FastQCSBATCH {
 		try{
 			if(!IOTools.isDir(projectDir+"/scripts"))
 				IOTools.mkDir(projectDir+"/scripts");
+			
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_fastQC.sh"));
 			ArrayList <String> samples = IOTools.getDirectories(projectDir+"/"+inDir);
 			for(int i = 0; i < samples.size(); i++){
@@ -110,37 +106,26 @@ public class FastQCSBATCH {
 			if(!IOTools.isDir(finalOutDir+"/scripts"))
 				IOTools.mkDir(finalOutDir+"/scripts");
 
-			try{
-				String sbatchFileName = finalOutDir+"/scripts/"+timestamp+".sbatch";
-				generalSbatchScript.println("sbatch "+ sbatchFileName);
-
-				ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
-				sbatch.printSBATCHinfo(EW,finalOutDir,timestamp,count, "FastQC", time);
-
-				EW.println();
-				EW.println();
-				EW.println("module load bioinfo-tools");
-				EW.println("module load FastQC");
-				EW.println("cd "+finalInDir);
-				EW.println();
-				EW.println();
-
 				for(int i = 0; i < fileNames.size(); i++){	
-					EW.println("fastqc -o "+finalOutDir+" "+fileNames.get(i)+" &");
-					if((i+1)%8 == 0 ){
-						EW.println();
-						EW.println();
-						EW.println("wait");
-						EW.println();
-						EW.println();
-					}
+				String sbatchFileName = finalOutDir+"/scripts/"+timestamp+"_"+i+"_FastQC.sbatch";
+				generalSbatchScript.println("sbatch "+ sbatchFileName);
+				try{
+					ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
+					sbatch.printSBATCHinfoCore(EW,finalOutDir,timestamp,count, "FastQC", time);
+
+					EW.println();
+					EW.println("module load bioinfo-tools");
+					EW.println("module load FastQC");
+					EW.println();
+					EW.println("cd "+finalInDir);
+					EW.println("fastqc -o "+finalOutDir+" "+fileNames.get(i));
+				
+					EW.flush();
+					EW.close();
 				}
-				EW.println();
-				EW.println();
-				EW.println("wait");
-				EW.flush();
-				EW.close();
-			}catch(Exception E){E.printStackTrace();}
+				catch(Exception E){E.printStackTrace();}
+				
+			}
 		}
 
 	}

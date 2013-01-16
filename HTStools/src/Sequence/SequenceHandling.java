@@ -428,7 +428,41 @@ public class SequenceHandling {
 		}
 	}
 	
+	public static void extractSize(Hashtable<String,String> T){
+		System.out.println("checking sequences size");
+		String suffix = Functions.getValue(T, "-suffix", "fasta");
+		int length = Integer.parseInt(Functions.getValue(T, "-length", "1"));
 
+		if(suffix.indexOf("fastq") != -1){
+			if(T.containsKey("-f1") && T.containsKey("-f2")){
+				//					String fileName1 = Functions.getValue(T, "-f1", ".");
+				//					String fileName2 = Functions.getValue(T, "-f2", ".");
+				//					FastQSequences.checkPairedFastQSequences(dir, fileName1, fileName2);
+			}
+			else if(T.containsKey("-f1")){
+				//
+			}
+			//
+		}
+		else if(suffix.indexOf("csfasta") != -1){
+			String dir = Functions.getValue(T, "-d", IOTools.getCurrentPath());
+			String fileName1 = Functions.getValue(T, "-i", ".");
+			int size = Integer.parseInt(Functions.getValue(T, "-max", "50"));
+			CfastaSequences.printSizeDistribution(dir, fileName1, size);
+		}
+		else if(suffix.indexOf("fasta") != -1){
+			String inFile = Functions.getValue(T, "-i", ".");
+			String outFile = Functions.getValue(T, "-o", inFile.substring(0,inFile.lastIndexOf("fa"))+length+".fa");
+			String WD = Functions.getValue(T, "-d", IOTools.getCurrentPath());
+			
+			System.out.println("Extrackting sequence longer than "+length+" that is written to "+outFile);
+			FastaSequences.extractSeqAboveLength(inFile,outFile,WD,length);
+		}
+		else{
+			System.out.println("kind has to be either fastq, csfasta or fa");
+		}
+	}
+	
 	public static void extractEnds(Hashtable<String,String> T){
 		String suffix = Functions.getValue(T, "-suffix", "fasta");
 		int length = Integer.parseInt(Functions.getValue(T, "-l", "300"));

@@ -1210,6 +1210,32 @@ public class CfastaSequences extends ArrayList <Solid> implements Serializable{
 			}catch(Exception E){E.printStackTrace();}
 			return null;
 	}
+
+	
+	private void getSizeDistribution(String dir, String fileName, String outFileName, int size){
+		int count = 0;
+		try{
+			
+			ExtendedReader ER = new ExtendedReader(new FileReader (dir+"/"+fileName));
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter (dir+"/"+outFileName));
+			
+			int[] counter = new int[size];
+			while(ER.more()){
+				while(ER.more()){
+					if((char)ER.lookAhead() == '#'){
+						ER.skipLine();
+					}
+					else{
+						int length = getLength(ER);
+						if(length < size)
+							counter[length]++;
+					}
+				}
+			}
+			ER.close();
+			}catch(Exception E){E.printStackTrace();}
+	}
+	
 	
 	private int[] getSizeDistribution(String dir, String fileName, int max, String[] primerSequences){
 		int count = 0;
@@ -1966,6 +1992,11 @@ public class CfastaSequences extends ArrayList <Solid> implements Serializable{
 		
 	}
 	
+//	private int getCFastaSequence(ExtendedReader ER){
+//		String InfoLine = ER.readLine();
+//		String Sequence = ER.readLine();
+//		CfastaSequence CSF = new 
+//	}
 	
 	private void addcFasta(ExtendedReader ER,String chromosome){
 		String InfoLine = ER.readLine();
