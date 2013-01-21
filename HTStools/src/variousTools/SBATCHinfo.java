@@ -137,6 +137,9 @@ public class SBATCHinfo {
 
 
 	public void printSBATCHinfo(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
+		if(IOTools.isDir(directory+"/reports")){
+			IOTools.mkDir(directory+"/reports");
+		}
 
 		if(program.indexOf("/")>-1){
 			program = program.substring(program.indexOf("/"));
@@ -172,6 +175,9 @@ public class SBATCHinfo {
 	}
 
 	public void printSBATCHinfo72GB(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
+		if(IOTools.isDir(directory+"/reports")){
+			IOTools.mkDir(directory+"/reports");
+		}
 
 		String jobName = ID+"_"+program+"_"+timestamp;
 
@@ -241,6 +247,9 @@ public class SBATCHinfo {
 
 	public void printSBATCHinfoFat(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
 
+		if(IOTools.isDir(directory+"/reports")){
+			IOTools.mkDir(directory+"/reports");
+		}
 		String jobName = ID+"_"+program+"_"+timestamp;
 
 		EW.println("#! /bin/bash -l");
@@ -272,6 +281,11 @@ public class SBATCHinfo {
 
 
 	public void printSBATCHinfohalvan(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time, int MB){
+		if(IOTools.isDir(directory+"/reports")){
+			IOTools.mkDir(directory+"/reports");
+		}
+
+		
 		int nrofnodes = MB/32 + 1;
 		if(nrofnodes < 4){nrofnodes = 4; System.out.println("Memory allocated will be "+4*32+" GB");}
 		else if(nrofnodes < 8){nrofnodes = 8; System.out.println("Memory allocated will be "+8*32+" GB");}
