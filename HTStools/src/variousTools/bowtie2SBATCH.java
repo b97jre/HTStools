@@ -527,7 +527,12 @@ public class bowtie2SBATCH {
 
 			EW.println("module load bioinfo-tools");
 			EW.println("module load bowtie2/2.0.0-beta6");
+			EW.println();
+			
+			EW.println("cd "+ this.projectDir);
 
+			
+			
 			String[] temp =  forward.split("/");
 			String[] temp2 = reverse.split("/");
 			String fileName1 = temp[temp.length-1];
@@ -545,15 +550,15 @@ public class bowtie2SBATCH {
 			if(temp.length > 1)
 				refName = temp[temp.length-1];
 			if(sensitive)
-				bowtie2File(EW, referenceFile, forward, reverse,outDir+"/"+query+"_"+refName+".sam" ,M, N, L, percent, X,8);
+				bowtie2File(EW, referenceFile, projectDir+"/"+forward, projectDir+"/"+reverse,outDir+"/"+query+"_"+refName+".sam" ,M, N, L, percent, X,8);
 			else if(normal)
-				bowtie2FileNormal(EW, referenceFile, forward, reverse,outDir+"/"+query+"_"+refName+".normal.sam",8);
+				bowtie2FileNormal(EW, referenceFile, projectDir+"/"+forward, projectDir+"/"+reverse,outDir+"/"+query+"_"+refName+".normal.sam",8);
 			else if(strict)
-				bowtie2FileStrict(EW, referenceFile, forward, reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
+				bowtie2FileStrict(EW, referenceFile, projectDir+"/"+forward, projectDir+"/"+reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
 			else if(superStrict)
-				bowtie2FileSuperStrict(EW, referenceFile, forward, reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
+				bowtie2FileSuperStrict(EW, referenceFile, projectDir+"/"+forward, projectDir+"/"+reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
 			else if(ends)
-				bowtie2FileSuperStrictEnds(EW, referenceFile,forward, reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
+				bowtie2FileSuperStrictEnds(EW, referenceFile,projectDir+"/"+forward, projectDir+"/"+reverse,outDir+"/"+query+"_"+refName+".strict.sam",outDir+"/"+query+"_"+refName+".not_paired.fastq",8);
 
 			EW.println();
 			EW.println();
