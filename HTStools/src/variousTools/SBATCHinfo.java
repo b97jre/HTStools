@@ -137,7 +137,7 @@ public class SBATCHinfo {
 
 
 	public void printSBATCHinfo(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
-		if(IOTools.isDir(directory+"/reports")){
+		if(!IOTools.isDir(directory+"/reports")){
 			IOTools.mkDir(directory+"/reports");
 		}
 
@@ -175,7 +175,7 @@ public class SBATCHinfo {
 	}
 
 	public void printSBATCHinfo72GB(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
-		if(IOTools.isDir(directory+"/reports")){
+		if(!IOTools.isDir(directory+"/reports")){
 			IOTools.mkDir(directory+"/reports");
 		}
 
@@ -213,7 +213,7 @@ public class SBATCHinfo {
 	public void printSBATCHinfoCore(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
 
 		
-		if(IOTools.isDir(directory+"/reports")){
+		if(!IOTools.isDir(directory+"/reports")){
 			IOTools.mkDir(directory+"/reports");
 		}
 		
@@ -247,7 +247,7 @@ public class SBATCHinfo {
 
 	public void printSBATCHinfoFat(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time){
 
-		if(IOTools.isDir(directory+"/reports")){
+		if(!IOTools.isDir(directory+"/reports")){
 			IOTools.mkDir(directory+"/reports");
 		}
 		String jobName = ID+"_"+program+"_"+timestamp;
@@ -281,7 +281,7 @@ public class SBATCHinfo {
 
 
 	public void printSBATCHinfohalvan(ExtendedWriter EW, String directory,String timestamp, int ID, String program, String time, int MB){
-		if(IOTools.isDir(directory+"/reports")){
+		if(!IOTools.isDir(directory+"/reports")){
 			IOTools.mkDir(directory+"/reports");
 		}
 
