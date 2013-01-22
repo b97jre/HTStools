@@ -299,7 +299,6 @@ public class trinity {
 	public void trinityFileEND( ExtendedWriter EW ,String trinitycommand, String outDir,String memory,int CPUs){
 		trinitycommand +=" --output "+outDir;
 		trinitycommand +=" --CPU "+(CPUs-1)+" ";
-		trinitycommand +=" --paired_fragment_length 400";
 		trinitycommand +=" --kmer_method jellyfish --max_memory "+memory;
 		EW.println("echo START");
 		EW.println();
