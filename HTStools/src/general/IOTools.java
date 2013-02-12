@@ -45,6 +45,8 @@ public abstract class IOTools
 	}
 	
 	public static int countLines(String filename) throws IOException {
+		System.out.println("starting reading sequences in "+filename);
+		long startTime = System.nanoTime();
 	    InputStream is = new BufferedInputStream(new FileInputStream(filename));
 	    try {
 	        byte[] c = new byte[1024];
@@ -56,10 +58,16 @@ public abstract class IOTools
 	                    ++count;
 	            }
 	        }
+			long endTime = System.nanoTime();
+			long duration = endTime - startTime;
+			System.out.println("finished. Took  "+duration+" time");
+		
 	        return count;
 	    } finally {
 	        is.close();
 	    }
+	    
+
 	}
 	
 	public static void concatFile(File src, File concat) throws Exception
@@ -398,12 +406,29 @@ public abstract class IOTools
 		out.close();
 	}
 
+	public static void mkDirs(String directoryName){
+		String[] subDirectories = directoryName.split("/");
+		String Dir="";
+		for(int i = 0; i < subDirectories.length; i++){
+			Dir+=subDirectories[i];
+			if(!isDir(Dir)){
+				mkDir(Dir);
+			}
+			Dir+="/";
+		}
+		boolean success = (new File(directoryName)).mkdir();
+		if(!success){
+			// Directory creation failed
+		}
+	}
+	
 	public static void mkDir(String directoryName){
 		boolean success = (new File(directoryName)).mkdir();
 		if (!success) {
 			// Directory creation failed
 		}
 	}
+	
 
 	public static boolean isDir(String directoryName){
 		boolean success = (new File(directoryName)).isDirectory();

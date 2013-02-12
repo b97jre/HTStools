@@ -20,9 +20,11 @@ public class FastQCSBATCH {
 	String outDir; 
 	String time;
 	String projectDir;
+	boolean dependencies;
 
 	public FastQCSBATCH(){
 		projectDir = time = inDir = outDir = null;
+		dependencies = false;
 	}
 
 	public static void main(String []args){
@@ -52,7 +54,6 @@ public class FastQCSBATCH {
 			System.out.println("must contain inDirectory -i");
 			allPresent = false;
 		}
-		if(T.containsKey("-pDir"))
 			projectDir= Functions.getValue(T, "-pDir", IOTools.getCurrentPath());
 
 		if(T.containsKey("-t"))
@@ -130,5 +131,24 @@ public class FastQCSBATCH {
 
 	}
 
+	public void FastQCSample(ExtendedWriter EW, String inDir, String fileName){
+		EW.println();
+		EW.println("#####################################################################");
+		EW.println("#FastQC of sample "+inDir+"/"+fileName);
+		EW.println();
+		if(!dependencies){
+			EW.println("module load bioinfo-tools");
+			EW.println("module load FastQC");
+			EW.println();
+			dependencies =true;
+		}
+		EW.println("cd "+inDir);
+		EW.println("fastqc -o fastQC "+fileName);
+		EW.println();
+		EW.println("#FastQC stop");
+		EW.println("#####################################################################");
+		EW.println();
+	}
+	
 
 }

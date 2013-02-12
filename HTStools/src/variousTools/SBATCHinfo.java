@@ -33,6 +33,10 @@ public class SBATCHinfo {
 				module[0]=modules;
 			}
 		}
+		if(T.containsKey("-deNovo")){
+			deNovoAssembly sbatch = new deNovoAssembly();
+			sbatch.run(T);
+		}
 		
 		if(T.containsKey("-fastQC")){
 			FastQCSBATCH sbatch = new FastQCSBATCH();
@@ -84,7 +88,7 @@ public class SBATCHinfo {
 			sbatch.run(T);
 		}
 		if(T.containsKey("-trinity")){
-			trinity sbatch = new trinity();
+			Trinity sbatch = new Trinity();
 			sbatch.run(T);
 		}
 		if(T.containsKey("-DigiNorm")){

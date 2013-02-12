@@ -44,6 +44,9 @@ public class SequenceHandling {
 		else if(program.indexOf("LENGTH") != -1){
 			SequenceHandling.extractAbove(T);
 		}
+		else if(program.indexOf("EXACT") != -1){
+			SequenceHandling.extractSize(T);
+		}
 		else if(program.indexOf("ORFS") != -1){
 			SequenceHandling.getORFs(T);
 		}
@@ -429,9 +432,9 @@ public class SequenceHandling {
 	}
 	
 	public static void extractSize(Hashtable<String,String> T){
-		System.out.println("checking sequences size");
-		String suffix = Functions.getValue(T, "-suffix", "fasta");
-		int length = Integer.parseInt(Functions.getValue(T, "-length", "1"));
+		String suffix = Functions.getValue(T, "-suffix", "fa");
+		int length = Integer.parseInt(Functions.getValue(T, "-l", "1"));
+		System.out.println("Extracting "+ suffix +" sequences with size "+length);
 
 		if(suffix.indexOf("fastq") != -1){
 			if(T.containsKey("-f1") && T.containsKey("-f2")){
@@ -439,7 +442,8 @@ public class SequenceHandling {
 				//					String fileName2 = Functions.getValue(T, "-f2", ".");
 				//					FastQSequences.checkPairedFastQSequences(dir, fileName1, fileName2);
 			}
-			else if(T.containsKey("-f1")){
+			else if(T.containsKey("-i")){
+				FastQSequences.fastqfixedLength(IOTools.getCurrentPath(), Functions.getValue(T, "-i"), length);
 				//
 			}
 			//

@@ -39,6 +39,9 @@ public class Database implements Serializable{
 	
 	private double coverage;
 	private double coverage2;
+	
+	private int[] readCoveragePlus;
+	private int[] readCoverageMinus;
 
 	protected ArrayList <Hit> hits;
 
@@ -94,6 +97,7 @@ public class Database implements Serializable{
 		System.out.println(this.Name +"\t"+ this.coverage+"\t"+ this.coverage2);
 	}
 
+	
 	public void printDistribution(ExtendedWriter EW, int cutoff){
 		int[] plusStrand = new int[this.length];
 		int[] minusStrand = new int[this.length];

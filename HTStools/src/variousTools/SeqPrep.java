@@ -21,6 +21,8 @@ public class SeqPrep {
 	String[] sep; 
 	String suffix;
 	boolean hiseq;
+	String timeStamp;
+	SBATCHinfo sbatch; 
 
 	public SeqPrep(){
 		 codeFile = time = null;
@@ -54,8 +56,8 @@ public class SeqPrep {
 
 		boolean allPresent = true;
 
-		String timeStamp = Functions.getDateTime();
-		SBATCHinfo sbatch = new SBATCHinfo();
+		timeStamp = Functions.getDateTime();
+		sbatch = new SBATCHinfo();
 		if(!sbatch.addSBATCHinfo(T)) allPresent = false;
 
 		if(T.containsKey("-i"))
@@ -65,50 +67,46 @@ public class SeqPrep {
 			allPresent = false;
 		}
 		if(T.containsKey("-o"))
-			outDir= Functions.getValue(T, "-o", ".");
+			outDir= Functions.getValue(T, "-o", inDir+"_SeqPrep");
 		else{
 			System.out.println("must contain outDirectory -o");
 			allPresent = false;
 		}
-		if(T.containsKey("-pDir"))
-			projectDir= Functions.getValue(T, "-pDir", ".");
-		else{
-			System.out.println("must contain projectDirectory -pDir");
-			allPresent = false;
-		}
-
+		
+		projectDir= Functions.getValue(T, "-pDir", IOTools.getCurrentPath());
 		if(T.containsKey("-6"))
 			hiseq = true;
 		else{
 			hiseq = false;
 		}
-	
-		if(T.containsKey("-time"))
-			time = Functions.getValue(T, "-time", ".");
+		
+		if(T.containsKey("-t"))
+			time = Functions.getValue(T, "-t", ".");
 		else{
-			System.out.println("must contain likely time -time");
+			System.out.println("must contain likely time (-t)");
 			allPresent = false;
 		}
-
+		
+		
 		suffix = Functions.getValue(T, "-suffix", "fastq");
 		codeFile = Functions.getValue(T, "-codeFile", "/bubo/home/h17/johanr/bin/SeqPrep");
 	
 		if(allPresent)
-			filterFasta(sbatch, timeStamp,projectDir,inDir,outDir);
+			filterFasta(projectDir,inDir,outDir);
 		else
 			System.out.println("\n\nAborting run because of missing arguments for SeqPrep.");
 	}
 
 
-	public void filterFasta(SBATCHinfo sbatch, String timeStamp,String projectDir, String inDir, String outDir){
+	public void filterFasta(String projectDir, String inDir, String outDir){
 		try{
 			if(!IOTools.isDir(projectDir+"/scripts"))
 				IOTools.mkDir(projectDir+"/scripts");
 			if(!IOTools.isDir(projectDir+"/"+outDir))
 				IOTools.mkDir(projectDir+"/"+outDir);
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_filter_fastq.sh"));
-			filter_fastqSample(EW,sbatch,projectDir+"/"+inDir ,projectDir+"/"+outDir, timeStamp,0);
-				EW.flush();
+			filter_fastqSample(EW,projectDir+"/"+inDir ,projectDir+"/"+outDir);
+			EW.flush();
 			EW.close();
 		}catch(Exception E){E.printStackTrace();}
 	} 
@@ -116,7 +114,7 @@ public class SeqPrep {
 
 
 
-	public void filter_fastqSample(ExtendedWriter generalSbatchScript, SBATCHinfo sbatch , String inDir, String outDir,String timestamp, int count2){
+	public void filter_fastqSample(ExtendedWriter generalSbatchScript , String inDir, String outDir){
 
 
 		if(!IOTools.isDir(outDir))
@@ -125,11 +123,9 @@ public class SeqPrep {
 
 		ArrayList <String> samples = IOTools.getDirectories(inDir);
 		for(int i = 0; i < samples.size(); i++){
-			filter_fastqSample(generalSbatchScript,sbatch,inDir+"/"+samples.get(i) ,outDir+"/"+samples.get(i), timestamp,i);
+			filter_fastqSample(generalSbatchScript,inDir+"/"+samples.get(i) ,outDir+"/"+samples.get(i));
 		}
-
 		ArrayList <String> fileNames = IOTools.getSequenceFiles(inDir,suffix);
-
 		if(fileNames.isEmpty()){
 			System.out.println("No "+suffix+" files in folder :"+inDir);
 			return;
@@ -139,44 +135,53 @@ public class SeqPrep {
 				IOTools.mkDir(outDir+"/reports");
 			if(!IOTools.isDir(outDir+"/scripts"))
 				IOTools.mkDir(outDir+"/scripts");
-
 			try{
-				String sbatchFileName = outDir+"/scripts/"+timestamp+".sbatch";
-				
-				generalSbatchScript.println("sbatch "+ sbatchFileName);
-				
-				ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
-				sbatch.printSBATCHinfo(EW,outDir,timestamp,count2,"filter_fastq_"+count2, time);
-				EW.println("cd "+inDir);
 				
 				ArrayList <String[]> pairs = IOTools.findPairs(fileNames,sep);
-				
 				for(int i = 0; i < pairs.size();i++){
-					System.out.println(pairs.get(i)[0] + " " + pairs.get(i)[1]);
-					EW.print(codeFile +" -f "+pairs.get(i)[0]+" -r "+pairs.get(i)[1]);
+					String sbatchFileName = outDir+"/scripts/"+timeStamp+"_"+i+".sbatch";
+					generalSbatchScript.println("sbatch "+ sbatchFileName);
+					ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
+					sbatch.printSBATCHinfoCore(EW,outDir,timeStamp,i,"filter_fastq_"+i, time);
+					EW.println("cd "+inDir);
+					EW.print(codeFile );
+					if(hiseq)EW.print(" -6 ");
+					EW.print(" -f "+pairs.get(i)[0]+" -r "+pairs.get(i)[1]);
 					EW.print(" -1 "+outDir+"/"+pairs.get(i)[0]+".gz -2 "+outDir+"/"+pairs.get(i)[1]+".gz");
-					if(hiseq)EW.print(" -6");
-					EW.println(" -s "+ outDir+"/"+pairs.get(i)[2]+"merged.fastq.gz &");
-			
-					if((i+1)%8 == 0 ){
-						EW.println();
-						EW.println();
-						EW.println("wait");
-						EW.println();
-						EW.println();
-					}
-				
+					EW.println(" -s "+ outDir+"/"+pairs.get(i)[2]+"merged.fastq.gz");
+					EW.println();
+					EW.flush();
+					EW.close();
 				}
-
-				EW.println();
-				EW.println();
-				EW.println("wait");
-				EW.flush();
-				EW.close();
 			}catch(Exception E){E.printStackTrace();}
 		}
 
 	}
 
+	public void filter_fastqSample(ExtendedWriter EW , String inDir, String outDir,String forward, String reverse,String common){
+		
+		if(codeFile == null){
+			codeFile = "/bubo/home/h17/johanr/bin/SeqPrep";
+		}
+		EW.println();
+		EW.println();
+		EW.println("#############################################################################################################");
+		EW.println("Running SeqPrep START");
+		EW.println();
+		EW.println();
+		
+		EW.println("cd "+inDir);
+		EW.print(codeFile );
+		if(hiseq)EW.print(" -6 ");
+		EW.print(" -f "+forward+" -r "+reverse);
+		EW.print(" -1 "+outDir+"/"+forward+".gz -2 "+outDir+"/"+reverse+".gz");
+		EW.println(" -s "+ outDir+"/"+common+"merged.fastq.gz");
+		EW.println();
+		EW.println("running SeqPrep DONE");
+		EW.println("#############################################################################################################");
+		EW.println();
+		EW.println();
+
+	}
 
 }

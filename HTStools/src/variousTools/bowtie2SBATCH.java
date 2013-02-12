@@ -210,7 +210,7 @@ public class bowtie2SBATCH {
 		try{
 			if(!IOTools.isDir(projectDir+"/scripts"))
 				IOTools.mkDir(projectDir+"/scripts");
-			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_bowtie2.sh"));
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+".bowtie2.sh"));
 			if(files){
 				bowtie2File(EW,sbatch, timeStamp,  outDir,forward, reverse);
 			}

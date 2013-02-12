@@ -56,8 +56,7 @@ public class FastQSequence extends Object implements Serializable {
 		this.quality = ER.readLine();
 		return this.QC();
 	}
-	
-	
+
 	
 	public boolean addInfo(ExtendedReader ER, int length){
 		this.name = ER.readLine();
@@ -73,9 +72,6 @@ public class FastQSequence extends Object implements Serializable {
 		if(this.quality == null) return false;
 		if(this.sequence.length() != this.quality.length()){
 			System.out.println(this.name+ " does not have the same sequence and quality length or sequenceLength is less than 40");
-			return false;
-		}
-		if(this.sequence.length() < 40){
 			return false;
 		}
 		

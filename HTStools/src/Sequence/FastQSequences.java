@@ -265,7 +265,7 @@ public class FastQSequences implements Serializable{
 
 	public static int countSequences(String dir, String file){
 		try{
-			return IOTools.countLines(dir+"/"+file);
+			return IOTools.countLines(dir+"/"+file)/4;
 		}
 		catch(Exception E){
 			E.printStackTrace(); 
@@ -830,6 +830,27 @@ public class FastQSequences implements Serializable{
 
 				A.printFasta(EW1);
 			}
+			ER1.close();
+			EW1.flush();
+			EW1.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+	
+	public static void fastqfixedLength(String inDir, String fileName1,int length){
+		try{
+			ExtendedReader ER1 = new ExtendedReader(new FileReader (inDir+ "/" + fileName1));
+
+			String outFile = fileName1.substring(0,fileName1.lastIndexOf('.'))+"."+length+".fastq";
+			ExtendedWriter EW1 = new ExtendedWriter(new FileWriter (inDir+ "/"+ outFile));
+			//ExtendedWriter EW2 = new ExtendedWriter(new FileWriter (outDir+ "/"+ fileName1+".perfect"));
+			while(ER1.more()){
+				FastQSequence A = new FastQSequence();
+				boolean info1 = A.addInfo(ER1,length);
+				
+				if(info1 && A.getIntSequence().length==length)
+					A.printFastQ(EW1);
+			}			
 			ER1.close();
 			EW1.flush();
 			EW1.close();
