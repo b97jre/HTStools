@@ -277,6 +277,48 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		}catch(Exception E){E.printStackTrace();}
 
 	}
+
+	public static void fixArrowProblem(String inFile){
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inFile));
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter (inFile+".fixed"));
+
+			int count = 0;
+			boolean first  = true;
+			int length = 0;
+			while(ER.more()){
+
+				if((char)ER.lookAhead() == '>'){
+					if(count != 0 )EW.println();
+
+					String seqName = ER.readLine();
+					char[] Narray = seqName.toCharArray();
+					int pointer = 0;
+					while(Narray[pointer] == '>')pointer++;
+					seqName = seqName.substring(pointer);
+					EW.println(">"+seqName);
+					count++;
+					if(!first){
+						length = 0;
+					}
+					else
+						first = false;
+				}
+				else{
+					String seq = ER.readLine();
+					length += seq.length();
+					EW.print(seq);
+				}
+			}
+			EW.println();
+			EW.flush();
+			EW.close();
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+
+	}
+	
+	
 	
 	public static void extractSeqAboveLength(String inFile, String outFile, String WD, int length){
 		try{

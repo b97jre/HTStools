@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+
 
 import javax.swing.JFileChooser;
 
@@ -34,42 +36,42 @@ public abstract class IOTools
 		return newArr;
 	}
 
-	
+
 	public static String getCurrentPath(){
 		try{
 			return new java.io.File(".").getCanonicalPath();
 		}catch(Exception E){E.printStackTrace();}
-		
-		
+
+
 		return ".";
 	}
-	
+
 	public static int countLines(String filename) throws IOException {
 		System.out.println("starting reading sequences in "+filename);
 		long startTime = System.nanoTime();
-	    InputStream is = new BufferedInputStream(new FileInputStream(filename));
-	    try {
-	        byte[] c = new byte[1024];
-	        int count = 0;
-	        int readChars = 0;
-	        while ((readChars = is.read(c)) != -1) {
-	            for (int i = 0; i < readChars; ++i) {
-	                if (c[i] == '\n')
-	                    ++count;
-	            }
-	        }
+		InputStream is = new BufferedInputStream(new FileInputStream(filename));
+		try {
+			byte[] c = new byte[1024];
+			int count = 0;
+			int readChars = 0;
+			while ((readChars = is.read(c)) != -1) {
+				for (int i = 0; i < readChars; ++i) {
+					if (c[i] == '\n')
+						++count;
+				}
+			}
 			long endTime = System.nanoTime();
 			long duration = endTime - startTime;
-			System.out.println("finished. Took  "+duration+" time");
-		
-	        return count;
-	    } finally {
-	        is.close();
-	    }
-	    
+			System.out.println("finished. Took  "+duration/1000000000.0+" seconds");
+
+			return count;
+		} finally {
+			is.close();
+		}
+
 
 	}
-	
+
 	public static void concatFile(File src, File concat) throws Exception
 	{
 		src.createNewFile();
@@ -94,7 +96,7 @@ public abstract class IOTools
 			if (tF[i-1] != null)
 				tF[i-1].delete();
 	}
-	
+
 
 	public static String fixFileName(String name)
 	{
@@ -128,8 +130,8 @@ public abstract class IOTools
 		name = name.replace('\n', '_');
 		return name;
 	}
-	
-	
+
+
 	public static String fixFileName(String name, char ex)
 	{
 		name = name.replace('\\',ex);
@@ -147,8 +149,8 @@ public abstract class IOTools
 		return name;
 	}
 
-	
-	
+
+
 	public static String getContents(String s) throws Exception {return getContents(new File(s));}
 	public static final String getContents(File f) throws Exception {return readFile(f);}
 
@@ -390,8 +392,8 @@ public abstract class IOTools
 		in.close();
 		out.close();
 	}
-	
-	
+
+
 	public static void copy(File src, File dst) throws IOException {
 		InputStream in = new FileInputStream(src);
 		OutputStream out = new FileOutputStream(dst);
@@ -421,20 +423,20 @@ public abstract class IOTools
 			// Directory creation failed
 		}
 	}
-	
+
 	public static void mkDir(String directoryName){
 		boolean success = (new File(directoryName)).mkdir();
 		if (!success) {
 			// Directory creation failed
 		}
 	}
-	
+
 
 	public static boolean isDir(String directoryName){
 		boolean success = (new File(directoryName)).isDirectory();
 		return success;
 	}
-	
+
 
 
 	public static boolean fileExists(String dir, String fileName){
@@ -448,9 +450,9 @@ public abstract class IOTools
 	public static boolean fileExists(String fileName){
 		return (new File(fileName)).exists();
 	}
-	
 
-	
+
+
 	public static ArrayList<String> getDirectories(String Dir){
 		ArrayList<String> dirs = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -471,8 +473,8 @@ public abstract class IOTools
 		}
 		return dirs;
 	}
-	
-	
+
+
 	public static ArrayList<String> getSequenceFiles(String Dir){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -486,7 +488,7 @@ public abstract class IOTools
 			for (int i=0; i<children.length; i++) {
 				// Get filename of file or directory
 				String filename = children[i];
-				
+
 				if(!files[i].isDirectory()){
 					SequenceFiles.add(filename);
 				}
@@ -507,7 +509,7 @@ public abstract class IOTools
 			for (int i=0; i<children.length; i++) {
 				// Get filename of file or directory
 				String filename = children[i];
-				
+
 				if(filename.indexOf(suffix) > -1 && filename.lastIndexOf(suffix) + suffix.length() == filename.length()){
 					SequenceFiles.add(filename);
 				}
@@ -515,9 +517,9 @@ public abstract class IOTools
 		}
 		return SequenceFiles;
 	}
-	
+
 	public static ArrayList <String[]> findPairs(ArrayList <String> fileNames,  String [] sep){
-		
+
 		ArrayList <String[]> pairs = new ArrayList <String[]>();
 		for(int i = 0; i < fileNames.size(); i++){	
 			String fName = fileNames.get(i);
@@ -529,7 +531,7 @@ public abstract class IOTools
 						String[] fileName2 = fName2.split(sep[1]);
 						int count = 0;
 						for(int k = 0; k < fileName.length; k++){
-//							System.out.println(fileName[k] +"\t"+fileName2[k]);
+							//							System.out.println(fileName[k] +"\t"+fileName2[k]);
 							if(fileName[k].compareTo(fileName2[k]) != 0){
 								count++;
 							}
@@ -539,8 +541,8 @@ public abstract class IOTools
 							pair[0] = fileNames.get(i);
 							pair[1] = fileNames.get(j);
 							pair[2] = fileName[0];
-							
-							
+
+
 							pairs.add(pair);
 							if(i < j){
 								fileNames.remove(j);
@@ -558,9 +560,20 @@ public abstract class IOTools
 			}
 		}
 		return pairs;
-		
+
 	}
-	
-	
+
+	public static void copyFile(File source, File dest) throws IOException {
+		FileChannel sourceChannel = null;
+		FileChannel destChannel = null;
+		try {
+			sourceChannel = new FileInputStream(source).getChannel();
+			destChannel = new FileOutputStream(dest).getChannel();
+			destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+		}finally{
+			sourceChannel.close();
+			destChannel.close();
+		}
+	}
 
 }

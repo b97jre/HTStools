@@ -11,11 +11,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import Blast.Main;
-import Sequence.CfastaSequences;
 
-import sun.tools.tree.ThisExpression;
-import variousTools.trinity;
+import variousTools.Trinity;
 import general.ExtendedReader;
 import general.ExtendedWriter;
 
@@ -77,6 +74,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				String samFile = Functions.getValue(T, "-i");
 				
 				int cutoff = Functions.getInt(T, "-C", 10);
+				
 				Hashtable<String,String> flags = new Hashtable<String,String>();
 				SamSequences A = new SamSequences();
 				if(T.containsKey("-trinity")) A.trinity= true;
@@ -794,7 +792,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 
 
 	private void callTrinity(String dir){
-		trinity newDir = new trinity();
+		Trinity newDir = new Trinity();
 
 	}
 

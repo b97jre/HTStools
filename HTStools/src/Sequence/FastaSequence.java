@@ -310,7 +310,13 @@ public class FastaSequence extends Object implements Serializable {
 	}
 	
 	public void printFasta(ExtendedWriter EW){
-		EW.println(">"+this.Name);
+		String seqName = this.Name;
+		char[] Narray = seqName.toCharArray();
+		int pointer = 0;
+		while(Narray[pointer] == '>')pointer++;
+		seqName = seqName.substring(pointer);
+		EW.println(">"+seqName);
+
 		EW.println(RNAfunctions.DNAInt2String(this.Sequence));
 	}
 

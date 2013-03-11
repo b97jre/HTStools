@@ -27,70 +27,78 @@ public class SequenceHandling {
 	public static void run(Hashtable<String,String> T){
 
 		String program = Functions.getValue(T, "-p", "h").toUpperCase();
-		if(program.indexOf("UNIQUE") != -1){
+		String[] temp = program.split(" ");
+		program = temp[1];
+		if(program.indexOf("UNIQUE") == 0){
 			SequenceHandling.getOtherSequences(T);
 		}
-		else if(program.indexOf("MERGE") != -1){
+		else if(program.indexOf("MERGE") == 0){
 			SequenceHandling.MergeSequences(T);
 		}
-		else if(program.indexOf("SAMTOOLS") != -1){
+		else if(program.indexOf("SAMTOOLS") == 0){
 			SamSequences.run(T);
 		}
-		else if(program.indexOf("GENERATE") != -1){
+		else if(program.indexOf("GENERATE") == 0){
 			Generate.run(T);
 		}
-		else if(program.indexOf("INTERACTION") != -1){
+		else if(program.indexOf("INTERACTION") == 0){
 		}
-		else if(program.indexOf("LENGTH") != -1){
+		else if(program.indexOf("LENGTH") == 0){
 			SequenceHandling.extractAbove(T);
 		}
-		else if(program.indexOf("EXACT") != -1){
+		else if(program.indexOf("EXACT") == 0){
 			SequenceHandling.extractSize(T);
 		}
-		else if(program.indexOf("ORFS") != -1){
+		else if(program.indexOf("ORFS") == 0){
 			SequenceHandling.getORFs(T);
 		}
-		else if(program.indexOf("5END") != -1){
+		else if(program.indexOf("5END") == 0){
 			SequenceHandling.print5Ends(T);
 		}
-		else if(program.indexOf("3END") != -1){
+		else if(program.indexOf("3END") == 0){
 			SequenceHandling.print3Ends(T);
 		}
-		else if(program.indexOf("extractEnds".toUpperCase()) != -1){
+		else if(program.indexOf("extractEnds".toUpperCase()) == 0){
 			SequenceHandling.extractEnds(T);
 		}
-		else if(program.indexOf("removePrimer".toUpperCase()) != -1){
+		else if(program.indexOf("removePrimer".toUpperCase()) == 0){
 
 			SequenceHandling.removePrimers(T);
 		}
-		else if(program.indexOf("integrity".toUpperCase()) != -1){
+		else if(program.indexOf("integrity".toUpperCase()) == 0){
 			SequenceHandling.integrity(T);
 		}
-		else if(program.indexOf("check".toUpperCase()) != -1){
+		else if(program.indexOf("check".toUpperCase()) == 0){
 			SequenceHandling.check(T);
 		}
-		else if(program.indexOf("size".toUpperCase()) != -1){
+		else if(program.indexOf("size".toUpperCase()) == 0){
 			SequenceHandling.size(T);
 		}
-		else if(program.indexOf("fixSequenceNames".toUpperCase()) != -1){
+		else if(program.indexOf("fixSequenceNames".toUpperCase()) == 0){
 			SequenceHandling.fixSequenceNames(T);
 		}
+		else if(program.indexOf("fixSequenceLengths".toUpperCase()) == 0){
+			SequenceHandling.fixSequenceLengths(T);
+		}
+		else if(program.indexOf("fixArrows".toUpperCase()) == 0){
+			SequenceHandling.fixArrows(T);
+		}
 
-		else if(program.indexOf("fastq2fasta".toUpperCase()) != -1){
+		else if(program.indexOf("fastq2fasta".toUpperCase()) == 0){
 			FastQSequences.fastq2fasta(T);
 		}
 
-		else if(program.indexOf("RNA2DNA".toUpperCase()) != -1){
+		else if(program.indexOf("RNA2DNA".toUpperCase()) == 0){
 			String infile = Functions.getValue(T, "-i");
 			FastaSequences.RNA2DNA(infile);
 		}
 
 
-		else if(program.indexOf("mutationAnalysis".toUpperCase()) != -1){
+		else if(program.indexOf("mutationAnalysis".toUpperCase()) == 0){
 			SequenceHandling.mutationalAnalysis(T);
 		}
 
-		else if(program.indexOf("extract".toUpperCase()) != -1){
+		else if(program.indexOf("extract".toUpperCase()) == 0){
 			SequenceHandling.extract(T);
 		}
 		else if(T.containsKey("filter2")){
@@ -100,29 +108,29 @@ public class SequenceHandling {
 		else if(T.containsKey("GCcount")){
 			SequenceHandling.GCcount(T);
 		}
-		else if(program.indexOf("miRNAdistr".toUpperCase()) != -1){
+		else if(program.indexOf("miRNAdistr".toUpperCase()) == 0){
 			SequenceHandling.readsDistribution(T);
 		}
 
-		else if(program.indexOf("oneLine".toUpperCase()) != -1){
+		else if(program.indexOf("oneLine".toUpperCase()) == 0){
 			SequenceHandling.oneLine(T);
 		}
 
-		else if(program.indexOf("split".toUpperCase()) != -1){
+		else if(program.indexOf("split".toUpperCase()) == 0){
 			SequenceHandling.split(T);
 		}
 
 		
-		else if(program.indexOf("stratify".toUpperCase()) != -1){
+		else if(program.indexOf("stratify".toUpperCase()) == 0){
 			SequenceHandling.stratify(T);
 		}
 	
-		else if(program.indexOf("one2two".toUpperCase()) != -1){
+		else if(program.indexOf("one2two".toUpperCase()) == 0){
 			SequenceHandling.one2two(T);
 		}
 	
 		
-		else if(program.indexOf("QC".toUpperCase()) != -1){
+		else if(program.indexOf("QC".toUpperCase()) == 0){
 			SequenceHandling.QC(T);
 		}
 
@@ -186,7 +194,7 @@ public class SequenceHandling {
 
 		if(allRequired){
 			FastaSequences primers = new FastaSequences(primerFile);
-			if(suffix.indexOf("fastq") != -1){}
+			if(suffix.indexOf("fastq")== 01){}
 			else if(suffix.indexOf("csfasta") != -1){
 				CfastaSequences csPrimers = CfastaSequences.convertFasta2CSfasta(primers);
 				if(T.containsKey("i")){
@@ -609,17 +617,14 @@ public class SequenceHandling {
 
 
 	public static void fixSequenceNames(Hashtable<String,String> T){
-		System.out.println("Fixing sequencesize");
+		System.out.println("Fixing sequence names");
 		String suffix = Functions.getValue(T, "-suffix", "fasta");
 
 		if(suffix.indexOf("fastq") != -1){
-			if(T.containsKey("-f1") && T.containsKey("-f2")){
-				//					String fileName1 = Functions.getValue(T, "-f1", ".");
-				//					String fileName2 = Functions.getValue(T, "-f2", ".");
-				//					FastQSequences.checkPairedFastQSequences(dir, fileName1, fileName2);
-			}
-			else if(T.containsKey("-f1")){
-				//
+			if(T.containsKey("-i")){
+				String fileName1 = Functions.getValue(T, "-i", ".");
+				String extension = Functions.getValue(T, "-e", ".");
+				FastQSequences.fixFastqFile(fileName1,extension);
 			}
 			//
 		}
@@ -628,6 +633,7 @@ public class SequenceHandling {
 		}
 		else if(suffix.indexOf("fasta") != -1){
 			String fileName1 = Functions.getValue(T, "-i", ".");
+			
 			FastaSequences.fixFastaFile(fileName1);
 		}
 		else{
@@ -746,6 +752,42 @@ public class SequenceHandling {
 		}
 	}
 
+	
+	public static void fixSequenceLengths(Hashtable<String,String> T){
+		System.out.println("Change all sequences so that quality and sequence length is the same");
+		String dir,  muatantFile, mutantFile2 , Sequence, structure;
+		dir = muatantFile = mutantFile2 = Sequence  = structure = null;
+		if(T.containsKey("-i"))
+			dir = Functions.getValue(T, "-i", "");
+		else if(T.containsKey("-dir"))
+			dir = Functions.getValue(T, "-dir", "");
+		else {
+			dir = IOTools.getCurrentPath();
+		}
+		String suffix = Functions.getValue(T, "-suffix", "fastq");
+			if(suffix.indexOf("fastq") != -1){
+				FastQSequences.fixSequenceLengths(T);
+			}
+			else if(suffix.indexOf("csfasta") != -1){
+				//CfastaSequences.removePrimersDir(dir);
+			}
+			else if(suffix.indexOf("fa") != -1){}
+			else{
+				System.out.println("kind has to be either fastq, csfasta or fa");
+			}
+	}
+	
+
+	public static void fixArrows(Hashtable<String,String> T){
+		if(T.containsKey("-i")){
+			String file = Functions.getValue(T, "-i", "");
+			FastaSequences.fixArrowProblem(file);
+		}else{
+				System.out.println("must contain infFile (-i)");
+		}
+	}
+	
+	
 	public static void stratify(Hashtable<String,String> T){
 		System.out.println("Quality controll");
 		boolean allRequired = true;

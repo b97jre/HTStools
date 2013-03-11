@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 import Sequence.FastQSequences;
+import Sequence.FastaSequences;
+import Sequence.SequenceHandling;
 
 public class deNovoAssembly {
 
@@ -213,6 +215,10 @@ public class deNovoAssembly {
 					run.setValues(maxKmer, minKmer, step, finalKmer, suffix, insertSize, projectDir, strandSpecific);
 					
 					run.oasesFilePE(EW, pairs, oasesDir, memory, CPUs);
+					
+					FastaSequences.getORFs(oasesDir+"/oasesPipelineMerged/transcripts.fa");
+					
+					
 					EW.flush();
 					EW.close();
 

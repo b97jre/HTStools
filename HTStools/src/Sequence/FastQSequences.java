@@ -166,6 +166,44 @@ public class FastQSequences implements Serializable{
 		}
 	}
 
+
+	public static void fixSequenceLengths(Hashtable<String,String> T){
+		boolean allRequired = true;
+		String dir = null;
+		if(T.containsKey("-i"))
+			dir = Functions.getValue(T, "-i", "");
+		else {
+			dir = IOTools.getCurrentPath();
+		}
+		String outDir = Functions.getValue(T, "-o", dir+"/QC");
+
+		String suffix = Functions.getValue(T, "-suffix", "fastq");
+
+		if(allRequired){
+			if(suffix.indexOf("fastq") != -1){
+				
+				System.out.println("Checking directory "+dir);
+				ArrayList <String> fileNames = IOTools.getSequenceFiles(dir,suffix);
+				System.out.println("nr of Sequences "+fileNames.size());
+				for(int i = 0; i < fileNames.size(); i++){
+					System.out.println(fileNames.get(i));
+					fixSequenceLengths(dir, outDir, fileNames.get(i));
+					System.out.println();
+				}
+			}
+		}
+		else{
+			System.out.println("Not sufficient information to run program. You must either name a folder (-i) with pairs of fastq files that end with 1.fastq and 2.fastq or two files (-f1 and -f2) with the pairs that you want to QC");
+			System.out.println("-i <folder> \t\tAll pairs withing folder will be QC. overrides  -f1 and -f2");
+			System.out.println("-f1 <forward file> \tFirst file in fastq pair file");
+			System.out.println("-f2 <reverse file> \tSecond file in fastq pair file");
+			System.out.println("-o <folder> \t\tfolder were the checked fastq files end up. DEFAULT (\"current_folder/QC\").");
+			System.out.println("-l <integer> \t\tLeast length needed to keep pair. DEFAULT (70).");
+
+		}
+	}
+	
+	
 	public static void splitPair(Hashtable<String,String> T){
 		boolean allRequired = true;
 		String dir = null;
@@ -265,7 +303,7 @@ public class FastQSequences implements Serializable{
 
 	public static int countSequences(String dir, String file){
 		try{
-			return IOTools.countLines(dir+"/"+file)/4;
+			return IOTools.countLines(dir+"/"+file);
 		}
 		catch(Exception E){
 			E.printStackTrace(); 
@@ -766,6 +804,74 @@ public class FastQSequences implements Serializable{
 		}catch(Exception E){E.printStackTrace();}
 	}
 
+	
+	
+	public static void QC(String inDir, String outDir, String fileName1, int length){
+		try{
+			ExtendedReader ER1 = new ExtendedReader(new FileReader (inDir+ "/" + fileName1));
+
+			if(!IOTools.isDir(outDir) ){
+				IOTools.mkDir(outDir);
+			}
+			ExtendedWriter EW1 = new ExtendedWriter(new FileWriter (outDir+ "/"+ fileName1));
+
+			int count = 0;
+			int nrOfGood = 0;
+			while(ER1.more()){
+				count++;
+				FastQSequence A = new FastQSequence();
+				boolean info1 = A.addInfo(ER1, length);
+				if(info1){
+					nrOfGood++;
+					A.printFastQ(EW1);
+				}
+			}
+
+
+			System.out.println("Total number of sequences = "+ count);
+			System.out.println("Accepted number of sequences = "+ nrOfGood);
+			System.out.println("Percentage of accepted sequences = "+ (double)(nrOfGood*100/count) + "% ");
+			System.out.println();
+
+			ER1.close();
+			EW1.flush();
+			EW1.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+	
+	
+	public static void fixSequenceLengths(String inDir,String outDir, String fileName1){
+		try{
+			ExtendedReader ER1 = new ExtendedReader(new FileReader (inDir+ "/" + fileName1));
+			if(!IOTools.isDir(outDir))IOTools.mkDir(outDir);
+				ExtendedWriter EW1 = new ExtendedWriter(new FileWriter (outDir+ "/" + fileName1));
+
+			int count = 0;
+			int nrOfGood = 0;
+			while(ER1.more()){
+				count++;
+				FastQSequence A = new FastQSequence();
+				boolean info1 = A.addInfo2(ER1);
+				if(info1){
+					nrOfGood++;
+					A.printFastQ(EW1);
+				}
+
+			}
+
+
+			System.out.println("Total number of sequences = "+ count);
+			System.out.println("Accepted number of sequences = "+ nrOfGood);
+			System.out.println("Percentage of accepted sequences = "+ (double)(nrOfGood*100/count) + "% ");
+			System.out.println();
+
+			ER1.close();
+			EW1.flush();
+			EW1.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+	
+	
 	private static void Unify(String inDir, String outDir, String fileName1, int[] RefSeq, int errors){
 		try{
 			ExtendedReader ER1 = new ExtendedReader(new FileReader (inDir+ "/" + fileName1));
@@ -962,6 +1068,31 @@ public class FastQSequences implements Serializable{
 		return Name;
 	}
 
+	public static void fixFastqFile(String inFile, String extender){
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inFile));
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter (inFile+".fixed"));
+
+			while(ER.more()){
+
+				if((char)ER.lookAhead() == '@'){
+					String[] seqNames = ER.readLine().split(" ");
+					String fixedSeqName = seqNames[0]+"/"+extender;
+					for(int i = 1; i < seqNames.length;i++){
+						 fixedSeqName += " "+seqNames[i];
+					}
+					EW.println(fixedSeqName);
+				}
+				else{
+					EW.println(ER.readLine());
+				}
+			}
+			EW.flush();
+			EW.close();
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+
+	}
 
 
 

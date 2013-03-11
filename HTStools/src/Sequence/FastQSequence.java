@@ -57,6 +57,15 @@ public class FastQSequence extends Object implements Serializable {
 		return this.QC();
 	}
 
+	public boolean addInfo2(ExtendedReader ER){
+		this.name = ER.readLine();
+		this.sequence = ER.readLine();
+		this.otherName = ER.readLine();
+		this.quality = ER.readLine().substring(0,this.sequence.length());
+		return this.QC();
+	}
+	
+	
 	
 	public boolean addInfo(ExtendedReader ER, int length){
 		this.name = ER.readLine();
