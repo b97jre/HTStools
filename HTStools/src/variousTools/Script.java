@@ -46,7 +46,7 @@ public class Script {
 
 		boolean allPresent = true;
 
-		String timeStamp = Functions.getDateTime();
+		String timeStamp = Functions.getValue(T, "-TS",Functions.getDateTime());
 		SBATCHinfo sbatch = new SBATCHinfo();
 		if(!sbatch.addSBATCHinfo(T)) allPresent = false;
 
