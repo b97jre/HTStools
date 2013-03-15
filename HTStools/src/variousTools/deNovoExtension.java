@@ -20,10 +20,14 @@ public class deNovoExtension {
 	String suffix;
 	String split;
 	String[] sep; 
+	boolean extend;
+	boolean blat;
 
 	public deNovoExtension(){
 		this.split = ".";
 		projectDir = time =  null;
+		blat = false;
+		extend = true;
 	}
 
 
@@ -37,15 +41,19 @@ public class deNovoExtension {
 		if(!sbatch.addSBATCHinfo(T)) allPresent = false;
 
 		String timeStamp = Functions.getValue(T, "-TS",Functions.getDateTime());
-
-
 		projectDir= Functions.getValue(T, "-pDir", IOTools.getCurrentPath());
+
+		if(T.containsKey("-blat")){
+			extend = false;
+			blat=true;
+
+		}
 
 		if(allPresent){
 			ExtensionScript(sbatch,timeStamp, projectDir);
 		}
 		else
-			System.out.println("\n\nAborting run because of missing arguments for trinity.");
+			System.out.println("\n\nAborting run because of missing arguments.");
 	}
 
 
@@ -54,83 +62,133 @@ public class deNovoExtension {
 		try{
 			if(!IOTools.isDir(projectDir+"/scripts"))
 				IOTools.mkDir(projectDir+"/scripts");
-			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_PE_trinity.sh"));
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_deNovoExtension.sh"));
+			ExtendedWriter EW2 = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_deNovoExtension.info"));
+			ExtendedWriter EW3 = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_deNovoExtension_RUNME.sh"));
+			EW3.println("sh "+projectDir+"/scripts/"+timeStamp+"_deNovoExtension.sh");
 			EW.println("cd "+inDir);
-			findSpecies(EW,sbatch, timeStamp, inDir);
+			findSpecies(EW, EW2, EW3, sbatch, timeStamp, inDir);
 			EW.flush();
 			EW.close();
+			EW2.flush();
+			EW2.close();
+			EW3.flush();
+			EW3.close();
 		}catch(Exception E){E.printStackTrace();}
 	} 
 
-	public void findSpecies(ExtendedWriter EW, SBATCHinfo sbatch, String timeStamp, String inDir){
-
+	public void findSpecies(ExtendedWriter EW,ExtendedWriter EW2,ExtendedWriter EW3, SBATCHinfo sbatch, String timeStamp, String inDir){
 		ArrayList <String> subDirs = IOTools.getDirectories(inDir);
+		System.out.println("finding species");
 		for(int i = 0; i < subDirs.size(); i++){
-			findSamples(EW,sbatch,timeStamp,inDir+"/"+subDirs.get(i),subDirs.get(i));
+			findSamples(EW, EW2, EW3,sbatch,timeStamp+"_"+subDirs.get(i),inDir+"/"+subDirs.get(i),subDirs.get(i));
 		}
 	}
 
-	public void findSamples(ExtendedWriter EW, SBATCHinfo sbatch, String timeStamp, String inDir,String species){
+	public void findSamples(ExtendedWriter EW, ExtendedWriter EW2,ExtendedWriter EW3, SBATCHinfo sbatch, String timeStamp, String inDir,String species){
+		System.out.println("finding samples");
 
 		ArrayList <String> subDirs = IOTools.getDirectories(inDir);
 		for(int i = 0; i < subDirs.size(); i++){
-			findMethod(EW,sbatch,timeStamp,inDir+"/"+subDirs.get(i),species, subDirs.get(i));
+			findMethod(EW, EW2, EW3,sbatch,timeStamp+"_"+subDirs.get(i),inDir+"/"+subDirs.get(i),species, subDirs.get(i));
 		}
 	}
 
 
-	public void findMethod(ExtendedWriter EW, SBATCHinfo sbatch, String timeStamp, String inDir,String species,String sample){
+	public void findMethod(ExtendedWriter EW, ExtendedWriter EW2,ExtendedWriter EW3, SBATCHinfo sbatch, String timeStamp, String inDir,String species,String sample){
 
+		System.out.println("finding method "+timeStamp);
 		ArrayList <String> subDirs = IOTools.getDirectories(inDir);
 		for(int i = 0; i < subDirs.size(); i++){
-			if(subDirs.get(i).compareTo("trinity")==0){
-				findProgress(EW,sbatch,timeStamp,inDir+"/"+subDirs.get(i),species, sample,"trinity");
+			if(subDirs.get(i).compareTo("trinity")==0 || subDirs.get(i).compareTo("oases")==0){
+				if(extend){
+					findProgress(EW, EW2, EW3,sbatch,timeStamp+"_"+subDirs.get(i),inDir+"/"+subDirs.get(i),species, sample,subDirs.get(i));
+				}
+				if(blat){
+					blat(EW, EW2, EW3,sbatch,timeStamp+"_"+subDirs.get(i),inDir+"/"+subDirs.get(i),species, sample,subDirs.get(i));
+
+				}
 			}
-			if(subDirs.get(i).compareTo("oases")==0){
-				findProgress(EW,sbatch,timeStamp,inDir+"/"+subDirs.get(i),species, sample,"oases");
-			}
 		}
 	}
 
 
-	public void findProgress(ExtendedWriter EW, SBATCHinfo sbatch, String timeStamp, String inDir,String species,String sample,String method){
+	public void findProgress(ExtendedWriter EW, ExtendedWriter EW2,ExtendedWriter EW3, SBATCHinfo sbatch, String timeStamp, String inDir,String species,String sample,String method){
+		EW2.println("Checking progress of "+method+ "progress in sample "+ sample +" in species "+species);
 		System.out.println("Checking progress of "+method+ "progress in sample "+ sample +" in species "+species);
+
 		String round = "round";
 		int count = 1;
-		boolean lastFound = false;
-		while(IOTools.fileExists(inDir+"/"+round+count+"/AllSequences_ends.fa")){count++;}
-		System.out.println(count-1+" rounds are finished");
-		System.out.println("Checking status of round"+count);
-		ArrayList <String> samFile = IOTools.getSequenceFiles(inDir,".sam");
-		if(samFile.size() == 1){
-			if(IOTools.fileExists(inDir+"/"+round+count+"/Tend.txt")){
-				System.out.println("Extraction of extensions are finished. Writing shellscript for merging extensions");
-				if(count==1){
-					EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+species+"."+sample+"."+method+".initial_"+species+"."+sample+"."+method+".initial.stict.sam initial");
+		while(IOTools.isDir(inDir+"/"+round+count) && IOTools.fileExists(inDir+"/"+round+count+"/AllSequences_ends.fa")){count++;}
+		EW2.println(count-1+" rounds are finished");
+
+		if(IOTools.isDir(inDir+"/"+round+count)){
+			EW2.println("Checking status of round"+count);
+			ArrayList <String> samFile = IOTools.getSequenceFiles(inDir+"/"+round+count,"sam");
+			System.out.println(samFile.size());
+			if(samFile.size() == 1){
+				if(IOTools.isDir(inDir+"/"+round+count+"/Tend")){
+					EW2.println("Extraction of extensions are finished. Writing shellscript for merging extensions");
+					EW3.println("sbatch "+timeStamp+"_HTStools.merge.sh.sbatch");
+					if(count==1){
+						EW.println("java -Xmx10G -jar ~/bin/HTStools.jar -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+samFile.get(0)+" initial");
+					}
+					else{
+						EW.println("java -Xmx10G -jar ~/bin/HTStools.jar  -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+samFile.get(0)+" round"+(count-1));
+					}
 				}
 				else{
-					EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+species+"."+sample+"."+method+".round"+(count-1)+"_"+species+"."+sample+"."+method+".round"+(count-1)+".stict.sam initial");
+					EW2.println("Mapping of reads to transcripts are finished. Writing shellscript for extracting ends");
+					EW3.println("sbatch "+timeStamp+"_HTStools.extract.sh.sbatch");
+					if(count==1){
+						EW.println("java -Xmx10G -jar ~/bin/HTStools.jar  -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.extract.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+samFile.get(0)+" initial");
+					}
+					else{
+						EW.println("java -Xmx10G -jar ~/bin/HTStools.jar  -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.extract.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+samFile.get(0)+" round"+(count-1));
+					}
 				}
-			}
-			else{
-				System.out.println("Mapping of reads to transcripts are finished. Writing shellscript for extracting ends");
+			}else{
+				EW2.println(" Writing shellscript to map reads to transcripts");
+				EW3.println("sbatch "+timeStamp+"_HTStools.map.sh.sbatch");
 				if(count==1){
-					EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+species+"."+sample+"."+method+".initial_"+species+"."+sample+"."+method+".initial.stict.sam initial");
+					EW.println("java -Xmx10G -jar ~/bin/HTStools.jar  -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.map.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+" initial 30:00:00");
 				}
 				else{
-					EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.merge.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+"/"+species+"."+sample+"."+method+".round"+(count-1)+"_"+species+"."+sample+"."+method+".round"+(count-1)+".stict.sam round"+(count-1));
+					EW.println("java -Xmx10G -jar ~/bin/HTStools.jar  -p sbatch -script -TS "+timeStamp+" -node -i scripts/HTStools.map.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+" round"+(count-1)+" 15:00:00");
 				}
 			}
 		}else{
-			System.out.println(" Writing shellscript to map reads to transcripts");
-			if(count==1){
-				EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.map.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+" initial 30:00:00");
-			}
-			else{
-				EW.println("HTStools -p sbatch -script -node -i scripts/HTStools.map.sh -time 4:00:00  -parameters "+species+"/"+sample+"/"+method+"/"+round+count+" round"+(count-1)+" 5:00:00");
+			EW2.println("All rounds according to folder structure are finished");
+		}
+
+		EW2.println();
+		EW2.println();
+		EW.println();
+		EW.println();
+	}
+
+	public void blat(ExtendedWriter EW, ExtendedWriter EW2,ExtendedWriter EW3, SBATCHinfo sbatch, String timeStamp, String inDir,String species,String sample,String method){
+		EW2.println("Blating files of "+method+ " in sample "+ sample +" in species "+species+" against reference transcriptome");
+		if(!IOTools.isDir(projectDir+"/"+species+"/blatResults"))
+			IOTools.mkDir(projectDir+"/"+species+"/blatResults");
+		ArrayList <String> referenceFiles = IOTools.getSequenceFiles(projectDir+"/"+species+"/references","fa");
+		ArrayList <String> assemblyFiles = IOTools.getSequenceFiles(inDir+"/references","fa");
+
+
+		for(int i = 0; i < referenceFiles.size();i++){
+			for(int j = 0; j < assemblyFiles.size();j++){
+				Blat B = new Blat();
+				B.blatScript(EW3, sbatch, timeStamp+"_"+assemblyFiles.get(j)+"_"+referenceFiles.get(i), inDir+"/references/"+assemblyFiles.get(j), projectDir+"/"+species+"/references/"+referenceFiles.get(i), projectDir+"/"+species+"/blatResults");
+				B.blatScript(EW3, sbatch, timeStamp+"_"+referenceFiles.get(i)+"_"+assemblyFiles.get(j), projectDir+"/"+species+"/references/"+referenceFiles.get(i), inDir+"/references/"+assemblyFiles.get(j), projectDir+"/"+species+"/blatResults");
 			}
 		}
+
+		EW2.println();
+		EW2.println();
+		EW.println();
+		EW.println();
 	}
+
 
 }
 
