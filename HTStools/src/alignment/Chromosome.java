@@ -922,7 +922,7 @@ public class Chromosome implements Serializable{
 			}
 		}
 		else{
-			System.out.println("Something wrong when adding gene!");
+			System.out.println("Something wrong when adding exon!");
 			for(int i = 0; i < columns.length; i++){
 				System.out.print(columns[i]+"\t");
 			}

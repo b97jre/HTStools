@@ -104,7 +104,7 @@ public class mirfold {
 	public void parseHitSparse(ExtendedReader ER){
 		String info = ER.readLine();
 		System.out.println(info);
-		if(info.indexOf("no structure found") < 0){
+		if(info.indexOf("no structure found") < 0 &&  info.indexOf("dG=  0.00") == -1){
 			//1,thug-S 1627 2192,36,4915329,21,-,150_nt_upstreamAndDownstream_up l=155nt penalty=0 dG=-94.66 (-0.611/nt) miR@118-138
 			
 			String[] info2 = null;
