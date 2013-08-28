@@ -25,12 +25,15 @@ public class CufflinksSBATCH {
 	
 	int innerDistance;
 	int innerDistanceSTD;
+	
+	String GTF;
 
 	public CufflinksSBATCH(){
 		this.referenceFile = "Database";
 
 		
-		projectDir = time =  null;
+		projectDir = time = GTF =  null;
+		
 	}
 
 	public static void main(String []args){
@@ -74,6 +77,7 @@ public class CufflinksSBATCH {
 			System.out.println("must contain inDirectory -o");
 			allPresent = false;
 		}
+
 		if(T.containsKey("-time"))
 			time = Functions.getValue(T, "-time", ".");
 		else{
@@ -81,17 +85,22 @@ public class CufflinksSBATCH {
 			allPresent = false;
 		}
 		suffix = Functions.getValue(T,"-suffix","sam");
+		if(T.containsKey("-G"))
+			GTF = Functions.getValue(T, "-G");
+		
+		
+		
 		
 		
 		if(projectDir.compareTo("notPresent") != 0){
 			inDir = projectDir+"/"+inDir;
 			outDir = projectDir+"/"+outDir;
+			GTF = projectDir+"/"+GTF;
 		}
 		else{
 			projectDir = inDir;
 		}
-		
-		
+
 		if(allPresent)
 			cufflinks(sbatch, timeStamp, inDir, outDir);
 		else
@@ -148,7 +157,11 @@ public class CufflinksSBATCH {
 					String fileBase = fileNames.get(i).substring(0,fileNames.get(i).indexOf(suffix)-1);
 					if(!IOTools.isDir(outDir+"/"+fileBase))
 						IOTools.mkDir(outDir+"/"+fileBase);
-					EW.println ("cufflinks  -o "+outDir+"/"+fileBase+" "+fileNames.get(i));
+					if(this.GTF==null)
+						EW.println ("cufflinks  -o "+outDir+"/"+fileBase+" "+fileNames.get(i));
+					else
+						EW.println ("cufflinks -G "+this.GTF+" -o "+outDir+"/"+fileBase+" "+fileNames.get(i));
+						
 					EW.println();
 					EW.println();
 					EW.println("wait");

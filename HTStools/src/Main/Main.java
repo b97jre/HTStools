@@ -60,9 +60,6 @@ public class Main {
 		if(program.indexOf("GENOME") == 0){
 			Genome.run(T);
 		}
-		if(program.indexOf("DATABASES") == 0){
-			Databases.run(T);
-		}
 
 		if(program.indexOf("SEQUENCEHANDLING".toUpperCase()) == 0){
 			System.out.println("SequenceHandling");

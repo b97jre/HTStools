@@ -101,6 +101,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				System.out.println("Finnished running samtools parsing....");
 
 			}
+
 			else if(T.containsKey("-merge") ){
 				System.out.println("merging new five and three prime ends....");
 				SamSequences A = new SamSequences();
@@ -122,10 +123,11 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				} 
 				if(T.containsKey("-samPairs") ){
 					System.out.println("merging new five and three prime ends....");
-					String samFile = Functions.getValue(T,"-sam");
+					String samFile = Functions.getValue(T,"-i");
 					Hashtable<String,Integer> sizes = A.getSizes(inFile,dir);
 					Hashtable<String,String> flags = new Hashtable<String,String>();
 					flags.clear();
+					
 					if(!T.containsKey("-direction")){
 					flags.put("161","161");
 					flags.put("97","97");
@@ -139,8 +141,8 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 					else{
 						flags.put("161","161");
 						flags.put("97","97");
-						
 					}
+					
 					A.parsePairs(samFile,flags,sizes);
 					System.out.println("Reading fasta files....");
 					A.printAllPairs(samFile+".merged");
@@ -290,7 +292,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 					line++;
 				}
 				if(pairs.size() > count){
-					System.out.println("nr Of Sequences Read" + count);
+					System.out.println("nr Of pairs found" + count);
 					count= count + 1000;
 				}
 				if(line > lines){
@@ -491,7 +493,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			if(hitInfo.length > 2){
 				String hitName2 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2];
 				int tag = Integer.parseInt(info[1]);
-				if(hitName1.	compareTo(hitName2) != 0  && contig.compareTo(hitInfo[0]) != 0){
+				if(hitName1.compareTo(hitName2) != 0  && contig.compareTo(hitInfo[0]) != 0){
 					if((tag == 97) &&  leftPos+inside > sizes.get(hitName1).intValue() && rightPos < inside)
 						addPair(hitName1,"3end",hitName2,"5end",tag);
 					else if((tag == 65) &&  leftPos+inside > sizes.get(hitName1).intValue() && rightPos+inside > sizes.get(hitName1).intValue())

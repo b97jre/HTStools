@@ -45,7 +45,7 @@ public class Trinity {
 
 	public void run(Hashtable<String,String> T){
 
-		if(T.containsKey("-deNovo"));
+		if(T.containsKey("-deNovo")) return;
 		
 		
 		String inDir, outDir;
@@ -224,7 +224,7 @@ public class Trinity {
 		int nrofMB = nrOfSequences/1000000+1;
 		int hours = nrofMB*3;
 		if(hours > 168)hours = 168;	
-		System.out.println("Number of sequences are:"+ nrOfSequences);
+		//System.out.println("Number of sequences are:"+ nrOfSequences);
 		String newTime = hours+":00:00";
 		return newTime;
 		
@@ -247,8 +247,18 @@ public class Trinity {
 
 
 		String[] split1 = outDir.split("/");
-		String memory = "24G";
-		if(nrofMB < 36){
+		String memory = "3G";
+		if(nrofMB < 3){
+			System.out.println("Memory allocated will be 3 GB");
+			sbatch.printSBATCHinfoCore(EW,outDir,timestamp,count,"trinity_"+split1[split1.length-1], newTime);
+			memory = "2G";
+		}
+		else if(nrofMB < 24){
+			System.out.println("Memory allocated will be 24 GB");
+			sbatch.printSBATCHinfo(EW,outDir,timestamp,count,"trinity_"+split1[split1.length-1], newTime);
+			memory = "23G";
+		}
+		else if(nrofMB < 36){
 			System.out.println("Memory allocated will be 36 GB");
 			sbatch.printSBATCHinfoFat(EW,outDir,timestamp,count,"trinity_"+split1[split1.length-1], newTime);
 			memory = "34G";
@@ -276,9 +286,10 @@ public class Trinity {
 		EW.println();
 
 		return memory;
-
-
 	}
+	
+	
+	
 	public void trinityFileStartSingle(String inDir, String outDir, String timestamp, int count, SBATCHinfo sbatch,ExtendedWriter EW ){
 
 		int hours = 20;

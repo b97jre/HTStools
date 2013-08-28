@@ -249,6 +249,20 @@ public abstract class Functions{
 		return false;
 	}
 
+	public static String getCommonPrefix(String seq1,String seq2){
+		char[] CA1 = seq1.toCharArray();
+		char[] CA2 = seq2.toCharArray();
+		int pointer = 0;
+		boolean common = true;
+		while(pointer < CA1.length && common ){
+			if(CA1[pointer]!= CA2[pointer]){
+				common = false;
+				pointer--;
+			}
+			pointer++;
+		}
+		return seq1.substring(0,pointer);
+	}
 
 
 	public static String[] addString(String[] StringArray, String newString){
@@ -1296,6 +1310,17 @@ public abstract class Functions{
 
 	} 
 
+	
+	public static boolean contains(ArrayList<String> StringArray,String newString){
+		if(StringArray == null)
+			return false;
+		newString = IOTools.fixFileName(newString);
+		for(int i = 0; i < StringArray.size(); i++){
+			if(StringArray.get(i).compareTo(newString) == 0) return true;
+		}
+		return false;
+	}
+
 
 	public static boolean contains(String[] StringArray,String newString){
 		if(StringArray == null)
@@ -1360,6 +1385,24 @@ public abstract class Functions{
 	}	
 
 
+	public static ArrayList<String> mergeLists(ArrayList<String> listOne, ArrayList<String> listTwo){
+		ArrayList<String> newList = new ArrayList<String>();
+		newList.addAll(listOne);
+		newList.addAll(listTwo);
+		return newList;
+	}
+	
+	public static ArrayList<String> getStringsWithPrefix(ArrayList<String> listOne, String prefix){
+		ArrayList<String> newList = new ArrayList<String>();
+		for(int i = 0; i< listOne.size(); i++){
+			if(listOne.get(i).startsWith(prefix))
+				newList.add(listOne.get(i));
+		}
+		return newList;
+	}
+	
+	
+	
 	public static Object[] addObject(Object[] objects, Object newObject ){
 		if(objects == null){
 			objects = new Object[1];

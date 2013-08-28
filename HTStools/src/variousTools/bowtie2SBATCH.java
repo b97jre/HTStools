@@ -144,9 +144,8 @@ public class bowtie2SBATCH {
 			allPresent = false;
 		}
 		suffix = Functions.getValue(T,"-suffix","fastq");
-		this.sep = new String[2];
-		sep[0] = "1."+suffix;
-		sep[1] = "2."+suffix;
+		String seperator = Functions.getValue(T,"-sep","1."+suffix+" 2."+suffix);
+		this.sep = seperator.split(" ");
 
 
 
@@ -269,7 +268,7 @@ public class bowtie2SBATCH {
 
 
 
-	public void bowtie2File( ExtendedWriter EW ,String indexFile, String inFile1, String inFile2, String outFile, int M, int N, int L, int percent, int X, int nrOfThreads){
+	public static void bowtie2File( ExtendedWriter EW ,String indexFile, String inFile1, String inFile2, String outFile, int M, int N, int L, int percent, int X, int nrOfThreads){
 
 		// bowtie2 --local -M 3 -N 2 -L 25 -i S,1,0.50  -x bowtie2Ref/GCAT -1 blend/blend.1.fastq -2 blend/blend.2.fastq -S bowtie2/blend.sam -t --score-min  L,0,0.50
 		String bowtiecommand = "bowtie2 --local -M "+M+" -N "+N+" -L "+L+" -X "+X+"  -t --score-min L,0,0."+percent;

@@ -180,6 +180,8 @@ public class BlastHit {
 			return false;
 		}
 		System.out.println("this should never happen in isForward()");
+		System.out.println(this.queryName+"\t"+this.hitName+"\t"+this.hitStart+"\t"+ this.hitStop);
+		System.out.println();
 		return false;
 
 	}

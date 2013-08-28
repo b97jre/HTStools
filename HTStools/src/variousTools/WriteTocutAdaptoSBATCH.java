@@ -79,7 +79,7 @@ public class WriteTocutAdaptoSBATCH {
 			System.out.println("Add flag -6 if the phred score are ascci from 31 (hiseq-instruments)");
 		}else{
 			seqPrep=true;
-			if(T.containsKey("-seqPrep"))hiseq=true;
+			if(T.containsKey("-6"))hiseq=true;
 		}
 
 

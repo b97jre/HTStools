@@ -33,8 +33,28 @@ public class SBATCHinfo {
 				module[0]=modules;
 			}
 		}
+		if(T.containsKey("-STAR")){
+			STAR sbatch = new STAR();
+			sbatch.run(T);
+		}
+		if(T.containsKey("-picard")){
+			Picard sbatch = new Picard();
+			sbatch.run(T);
+		}
+		if(T.containsKey("-GATK")){
+			GATK sbatch = new GATK();
+			sbatch.run(T);
+		}
+		if(T.containsKey("-BWA")){
+			BWA sbatch = new BWA();
+			sbatch.run(T);
+		}
 		if(T.containsKey("-deNovo")){
 			deNovoAssembly sbatch = new deNovoAssembly();
+			sbatch.run(T);
+		}
+		if(T.containsKey("-extension")){
+			deNovoExtension sbatch = new deNovoExtension();
 			sbatch.run(T);
 		}
 		
@@ -115,9 +135,14 @@ public class SBATCHinfo {
 	public boolean addSBATCHinfo(Hashtable<String,String> T ){
 		boolean allInfo = true;
 		projectNumber= Functions.getValue(T, "-pNr", "b2010035");
-		System.out.println("must contain projectNumber -pNr Default:"+ projectNumber);
 		email = Functions.getValue(T, "-email", "johan.reimegard@scilifelab.se");
-		System.out.println("must contain -email  Default:"+ email);
+		
+		
+//		if(!T.containsKey("-pNR"))
+//			System.out.println("must contain projectNumber -pNr Default:"+ projectNumber);
+//		if(!T.containsKey("-email"))
+//			System.out.println("must contain -email  Default:"+ email);
+		
 		
 		module =null;
 		if(T.containsKey("-modules")){
@@ -156,9 +181,8 @@ public class SBATCHinfo {
 		EW.println("#SBATCH -C thin");
 		EW.println("#SBATCH -t "+time);
 		EW.println("#SBATCH -J "+jobName);
-		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+".stderr.txt");
-		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+".stdout.txt");
-
+		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stderr.txt");
+		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stdout.txt");
 		if(email != null){
 			EW.println("#SBATCH --mail-type=All");
 			EW.println("#SBATCH --mail-user="+email);
@@ -191,8 +215,8 @@ public class SBATCHinfo {
 		EW.println("#SBATCH -C mem72GB");
 		EW.println("#SBATCH -t "+time);
 		EW.println("#SBATCH -J "+jobName);
-		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+".stderr.txt");
-		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+".stdout.txt");
+		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stderr.txt");
+		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stdout.txt");
 
 		if(email != null){
 			EW.println("#SBATCH --mail-type=All");
@@ -228,8 +252,8 @@ public class SBATCHinfo {
 		EW.println("#SBATCH -p core");
 		EW.println("#SBATCH -t "+time);
 		EW.println("#SBATCH -J "+jobName);
-		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+".stderr.txt");
-		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+".stdout.txt");
+		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stderr.txt");
+		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stdout.txt");
 
 		if(email != null){
 			EW.println("#SBATCH --mail-type=All");
@@ -262,8 +286,8 @@ public class SBATCHinfo {
 		EW.println("#SBATCH -C fat");
 		EW.println("#SBATCH -t "+time);
 		EW.println("#SBATCH -J "+jobName);
-		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+".stderr.txt");
-		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+".stdout.txt");
+		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stderr.txt");
+		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stdout.txt");
 
 		if(email != null){
 			EW.println("#SBATCH --mail-type=All");
@@ -310,8 +334,8 @@ public class SBATCHinfo {
 		EW.println("#SBATCH -n "+nrofnodes);
 		EW.println("#SBATCH -t "+time);
 		EW.println("#SBATCH -J "+jobName);
-		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+".stderr.txt");
-		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+".stdout.txt");
+		EW.println("#SBATCH -e "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stderr.txt");
+		EW.println("#SBATCH -o "+directory+"/reports/"+jobName+"_SLURM_Job_id=%j.stdout.txt");
 
 		if(email != null){
 			EW.println("#SBATCH --mail-type=All");

@@ -137,6 +137,10 @@ public class SequenceHandling {
 		else if(program.indexOf("mutual".toUpperCase()) != -1){
 			SequenceHandling.mutual(T);
 		}
+		
+		else if(program.indexOf("findDifferent".toUpperCase()) != -1){
+			SequenceHandling.findDifferent(T);
+		}
 
 		if(T.containsKey("-extra"))
 			FastaSequences.run(T);
@@ -852,6 +856,46 @@ public class SequenceHandling {
 		else{System.out.println("-i1, -i2 and -o must be specified");}
 	}
 
+
+	public static void findDifferent(Hashtable<String,String> T){
+		boolean allRequired = true;
+		String seqFile1, seqFile2,outFile3;
+		String dir = Functions.getValue(T, "-d", IOTools.getCurrentPath());
+		seqFile1 = Functions.getValue(T, "-i1");
+		seqFile2 = Functions.getValue(T, "-i2");
+		outFile3 = Functions.getValue(T, "-o");
+		boolean verbose  = false;
+		if(T.containsKey("-verbose"))verbose =true;
+		
+		if(seqFile1 == null || seqFile2 == null || outFile3 == null) allRequired= false;
+
+		String suffix = Functions.getValue(T, "-suffix", "fa");
+
+		if(allRequired){
+			if(suffix.indexOf("fastq") != -1){
+				//				FastQSequences.QC(T);
+			}
+			else if(suffix.indexOf("csfasta") != -1){
+				//CfastaSequences.removePrimersDir(dir);
+			}
+			else if(suffix.indexOf("fa") != -1){
+				System.out.println("reading first file");
+				FastaSequences A = new FastaSequences();
+				A.parseAllFasta(seqFile1,dir);
+				System.out.println("reading second file");
+				FastaSequences B = new FastaSequences();
+				B.parseAllFasta(seqFile2,dir);
+				System.out.println("Identifying different transcripts");
+				
+				FastaSequences C = FastaSequences.getUniqueTranscripts(A,B);
+				C.printFasta(dir, outFile3);
+			}
+			else{
+				System.out.println("kind has to be either fastq, csfasta or fa");
+			}
+		}
+		else{System.out.println("-i1, -i2 and -o must be specified");}
+	}
 
 
 

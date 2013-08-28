@@ -497,6 +497,30 @@ public abstract class IOTools
 		return SequenceFiles;
 	}
 
+	
+	public static ArrayList<String> getSequenceFilesFullPath(String Dir, String suffix){
+		ArrayList<String> SequenceFiles = new ArrayList<String>();
+		File dir = new File(Dir);
+
+		String[] children = dir.list();
+		if (children == null) {
+			return null;
+			// Either dir does not exist or is not a directory
+		} else {
+			for (int i=0; i<children.length; i++) {
+				// Get filename of file or directory
+				String filename = children[i];
+
+				if(filename.indexOf(suffix) > -1 && filename.lastIndexOf(suffix) + suffix.length() == filename.length()){
+					SequenceFiles.add(Dir+"/"+filename);
+				}
+			}
+		}
+		return SequenceFiles;
+	}
+
+
+	
 	public static ArrayList<String> getSequenceFiles(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -518,6 +542,29 @@ public abstract class IOTools
 		return SequenceFiles;
 	}
 
+	public static ArrayList<String> getSequenceFilesPrefix(String Dir, String prefix){
+		ArrayList<String> SequenceFiles = new ArrayList<String>();
+		File dir = new File(Dir);
+
+		String[] children = dir.list();
+		if (children == null) {
+			return null;
+			// Either dir does not exist or is not a directory
+		} else {
+			for (int i=0; i<children.length; i++) {
+				// Get filename of file or directory
+				String filename = children[i];
+
+				if(filename.indexOf(prefix) == 0 ){
+					SequenceFiles.add(filename);
+				}
+			}
+		}
+		return SequenceFiles;
+	}
+	
+	
+	
 	public static ArrayList <String[]> findPairs(ArrayList <String> fileNames,  String [] sep){
 
 		ArrayList <String[]> pairs = new ArrayList <String[]>();

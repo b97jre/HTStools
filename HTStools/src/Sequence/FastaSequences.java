@@ -39,7 +39,12 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 	}
 
 	public FastaSequences(String file){
-		verbose = false;
+		this.verbose = false;
+		readFastaFile(file);
+	}
+
+	public FastaSequences(String file,boolean verbose){
+		this.verbose = verbose;
 		readFastaFile(file);
 	}
 
@@ -68,7 +73,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 
 	public Hashtable<String, Gene> convertToHashTable(){
 		Hashtable<String, Gene> HT = new Hashtable<String, Gene>();
-		System.out.println(this.size());
+		//System.out.println(this.size());
 		for(int i = 0; i< this.size(); i++){
 			String Name = this.get(i).Name;
 			if(Name.indexOf(" ") >-1)
@@ -81,8 +86,56 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		}
 		
 		return HT;
-		
 	}
+
+	public Hashtable<String, FastaSequence> convertToHashTable2(){
+		Hashtable<String, FastaSequence> HT = new Hashtable<String, FastaSequence>();
+		//System.out.println(this.size());
+		for(int i = 0; i< this.size(); i++){
+			String Name = this.get(i).Name;
+			if(Name.indexOf(" ") >-1)
+				Name = this.get(i).Name.split(" ")[0];
+			HT.put(Name, this.get(i));
+			//System.out.println(Name);
+		}
+		
+		return HT;
+	}
+	
+
+	
+	public static FastaSequences getUniqueTranscripts(FastaSequences A, FastaSequences B){
+		
+		FastaSequences C = new FastaSequences();
+		Hashtable<String, FastaSequence> HT = A.convertToHashTable2();
+
+		int progress = 1;
+		System.out.println(B.size());
+		for(int i = 0; i < B.size();i++){
+			String Name = B.get(i).Name;
+			if(Name.indexOf(" ") >-1)
+				Name = Name.split(" ")[0];
+			
+			if(HT.containsKey(Name)){
+				
+				if(HT.get(Name).getLength() != B.get(i).getLength()){
+					C.add(B.get(i));
+					if((100*(B.get(i).getLength() - HT.get(Name).getLength()))/HT.get(Name).getLength() > 20 && B.get(i).getLength() > 500 ){
+						System.out.println(Name+"\t"+HT.get(Name).getLength()+"\t"+B.get(i).getLength()+"\t"+(B.get(i).getLength() - HT.get(Name).getLength())+"\t"+((100*(B.get(i).getLength() - HT.get(Name).getLength()))/HT.get(Name).getLength()));
+					}
+				}
+			}else{
+				C.add(B.get(i));
+			}
+			if(i> B.size()/100*progress){
+				System.out.print(".");
+				progress++;
+			}
+		}
+		return C;
+	}
+	
+	
 	
 	
 	public static FastaSequences getMutualTranscripts(FastaSequences A, FastaSequences B){
@@ -98,6 +151,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		}
 		return C;
 	}
+	
 	
 
 
@@ -479,6 +533,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 
 				if((char)ER.lookAhead() == '>'){
 					String seqName = ER.readLine();
+					seqName=seqName.split(" ")[0].substring(1);
 					count++;
 					if(!first){
 						EW2.println("\t"+length);
@@ -501,6 +556,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 
 	}
 
+	
 
 	public static void RNA2DNA(String inFile){
 		try{
@@ -628,7 +684,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 	
 	private void addFasta(ExtendedReader ER){
 		String InfoLine = ER.readLine();
-		//>853_36_1821_F3,187_50.1,155_50.1,149_50.1,137_50.1,130_50.1,24_50.1,18_50.1
+			
 
 		int[] tempSeq = new int[10000000];
 		int pointer = 0;
@@ -928,6 +984,8 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 	}
 
 	public void readFastaFile(String fileName){
+		if(verbose)
+			System.out.println("Verbose mode is on");
 		try{
 			ExtendedReader ER = new ExtendedReader(new FileReader(fileName));
 			int count = 1000;
@@ -949,7 +1007,43 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		}catch(Exception E){E.printStackTrace();}
 	}
 
+	
+	public void parseAllFasta(String inFile, String WD){
+		try{
+			FastaSequences.oneLineFirst(inFile,WD+"/temp.fa");
+			ExtendedReader ER = new ExtendedReader(new FileReader(WD+"/temp.fa"));
+			int count = 1000;
+			while(ER.more()){
+				if((char)ER.lookAhead() == '#'){
+					ER.skipLine();
+				}
+				else{
+					addAllFasta(ER);
+				}
+				if(this.size() > count){
+					System.out.println("nr Of Sequences Read" + count);
+					count= count + 1000;
+				}
+			}
+			System.out.println("Finished total nr of sequences = " + this.size());
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
 
+
+	private void addAllFasta(ExtendedReader EW){
+		while(EW.more()){
+			String infoLine = EW.readLine();
+			String[] info = infoLine.split("\\ ");
+			
+			String hitName = info[0];
+			String Sequence = EW.readLine();
+			FastaSequence A = new FastaSequence(hitName, Sequence);
+			this.add(A);
+		}
+	}
+	
+	
 	void readFastaFile(String dir, String fileName, int nrOfExperiments){
 
 		try{
@@ -1297,6 +1391,76 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		}
 		return lengths;
 	}
+
+	public String[] getNames(){
+		String[] Names = new String[this.size()];
+		for(int i = 0; i < this.size(); i++){
+			Names[i] = this.get(i).Name;
+		}
+		return Names;
+	}
+	
+
+
+
+	public static ArrayList<Integer> getLengths(String inFile){
+		
+		ArrayList<Integer> Lengths = new ArrayList<Integer>();
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inFile));
+
+
+			boolean first  = true;
+			int length = 0;
+			while(ER.more()){
+
+				if((char)ER.lookAhead() == '>'){
+					String seqName = ER.readLine();
+					seqName=seqName.substring(1);
+					if(!first){
+						Lengths.add(length);
+						length = 0;
+					}
+					else
+						first = false;
+				}
+				else{
+					String seq = ER.readLine();
+					length += seq.length();
+				}
+			}
+			Lengths.add(length);
+		
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+		return Lengths;
+
+	}
+
+	public static ArrayList<String> getNames(String inFile){
+		
+		ArrayList<String> Names = new ArrayList<String>();
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inFile));
+
+
+			while(ER.more()){
+				if((char)ER.lookAhead() == '>'){
+					String seqName = ER.readLine();
+					seqName=seqName.substring(1);
+					Names.add(seqName);
+				}
+				else{
+					ER.readLine();
+				}
+			}
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+		return Names;
+
+	}
+	
+	
 
 	public int[] print5end(ExtendedWriter EW){
 		int[] lengths = new int[this.size()];

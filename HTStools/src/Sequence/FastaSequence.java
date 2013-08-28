@@ -132,7 +132,7 @@ public class FastaSequence extends Object implements Serializable {
 			finalInfo[1] = reverse[reverse.length-2];//stop
 			finalInfo[2] = reverse[reverse.length-4];//kind
 			finalInfo[3] = -1;//direction
-			finalInfo[4] = 0;//frame
+			finalInfo[4] = reverse[reverse.length-1];//frame;//frame
 			finalSeq = removeInfo(reverse);
 		}
 		int[][] allInfo = new int[2][0];
@@ -321,7 +321,13 @@ public class FastaSequence extends Object implements Serializable {
 	}
 
 	public void printFastaRNA(ExtendedWriter EW){
-		EW.println(">"+this.Name);
+		String seqName = this.Name;
+		char[] Narray = seqName.toCharArray();
+		int pointer = 0;
+		while(Narray[pointer] == '>')pointer++;
+		seqName = seqName.substring(pointer);
+		EW.println(">"+seqName);
+
 		EW.println(RNAfunctions.RNAInt2String(this.Sequence));
 	}
 

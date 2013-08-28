@@ -39,6 +39,10 @@ public class deNovoAssembly {
 	boolean trinity;
 	boolean oases;
 
+	boolean interactive;
+
+
+
 
 	boolean pairedEnd;
 	boolean strandSpecific;
@@ -82,7 +86,7 @@ public class deNovoAssembly {
 			allPresent = false;
 		}
 
-		
+
 
 		boolean single = false;
 
@@ -101,7 +105,10 @@ public class deNovoAssembly {
 		if(T.containsKey("-singleEnd")){
 			this.pairedEnd = false;
 		}
-
+		this.interactive= false;
+		if(T.containsKey("-interactive")){
+			this.interactive= true;
+		}
 
 		projectDir= Functions.getValue(T, "-pDir", IOTools.getCurrentPath());
 
@@ -109,7 +116,7 @@ public class deNovoAssembly {
 		oasesDir= Functions.getValue(T, "-oases", inDir+"_oases");
 
 
-		
+
 		if(T.containsKey("-trinity"))this.trinity=true;
 		else this.trinity = false;
 		if(T.containsKey("-oases"))this.oases=true;
@@ -120,8 +127,7 @@ public class deNovoAssembly {
 		this.sep = new String[2];
 		sep[0] = "1."+suffix;
 		sep[1] = "2."+suffix;
-		this.insertSize = Integer.parseInt(Functions.getValue(T, "-insertSize", "200"));
-		
+
 		this.finalKmer=Functions.getInt(T, "-g", 27);
 		this.minKmer=Functions.getInt(T, "-m", 21);
 		this.maxKmer=Functions.getInt(T, "-M", 29);
@@ -129,8 +135,6 @@ public class deNovoAssembly {
 		this.insertSize = Functions.getInt(T, "-insert_size", 200);
 
 		if(allPresent){
-			
-		
 			deNovoScript(sbatch, timeStamp, projectDir+"/"+inDir, projectDir+"/"+trinityDir,projectDir+"/"+oasesDir);
 		}
 		else
@@ -144,15 +148,21 @@ public class deNovoAssembly {
 			if(!IOTools.isDir(projectDir+"/scripts"))
 				IOTools.mkDir(projectDir+"/scripts");
 			if(this.pairedEnd){
-				ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_PE_trinity.sh"));
+				ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_PE_deNovo.sh"));
 				deNovoDirPE(EW,sbatch, timeStamp, inDir, trinityDir, oasesDir);
 				EW.flush();
 				EW.close();
+				System.out.println("Execute the following command to start all the runs:");
+				System.out.println("sh "+projectDir+"/scripts/"+timeStamp+"_PE_deNovo.sh > "+projectDir+"/scripts/"+timeStamp+"_PE_deNovo.sh.out 2>"+projectDir+"/scripts/"+timeStamp+"_PE_deNovo.sh.err");
+
+
 			}else{
-				ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_SR_trinity.sh"));
+				ExtendedWriter EW = new ExtendedWriter(new FileWriter(projectDir+"/scripts/"+timeStamp+"_SR_deNovo.sh"));
 				deNovoDirSR(EW,sbatch, timeStamp, inDir, trinityDir, oasesDir);
 				EW.flush();
 				EW.close();
+				System.out.println("Execute the following command to start all the runs:");
+				System.out.println("sh "+projectDir+"/scripts/"+timeStamp+"_SR_deNovo.sh >"+projectDir+"/scripts/"+timeStamp+"_SR_deNovo.sh.out 2>"+projectDir+"/scripts/"+timeStamp+"_SR_deNovo.sh.error");
 			}
 
 		}catch(Exception E){E.printStackTrace();}
@@ -182,14 +192,18 @@ public class deNovoAssembly {
 
 					//trinitySpecific
 					String 	sbatchFileName = trinityDir+"/scripts/"+timestamp+"_"+count+"_trinity.sbatch";
-					generalSbatchScript.println("sbatch "+ sbatchFileName);
+					if(!interactive )
+						generalSbatchScript.println("sbatch "+ sbatchFileName);
+					else
+						generalSbatchScript.println("sh "+ sbatchFileName);
 					ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
 					String time = Trinity.getTime(nrOfSequences);
 					String memory = Trinity.trinityFileStart(nrOfSequences,  inDir,  trinityDir,  timestamp,  count,  sbatch, EW,time);
 					int CPUs = 8;
+					if(memory.compareTo("2G") == 0) CPUs = 2;
 					Trinity run = new Trinity();
 					run.suffix = this.suffix;
-					
+
 					run.trinityFilePE(EW, pairs,trinityDir,insertSize, memory,CPUs);
 					EW.flush();
 					EW.close();
@@ -206,19 +220,22 @@ public class deNovoAssembly {
 						IOTools.mkDir(oasesDir+"/scripts");
 
 					String 	sbatchFileName = oasesDir+"/scripts/"+timestamp+"_"+count+"_oases.sbatch";
-					generalSbatchScript.println("sbatch "+ sbatchFileName);
+					if(!interactive )
+						generalSbatchScript.println("sbatch "+ sbatchFileName);
+					else
+						generalSbatchScript.println("sh "+ sbatchFileName);
 					ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
 					String time = Oases.getTime(nrOfSequences);
 					String memory = Oases.FileStart(nrOfSequences,  inDir,  trinityDir,  timestamp,  count,  sbatch, EW,time);
 					int CPUs = 8;
 					Oases run = new Oases();
 					run.setValues(maxKmer, minKmer, step, finalKmer, suffix, insertSize, projectDir, strandSpecific);
-					
+
 					run.oasesFilePE(EW, pairs, oasesDir, memory, CPUs);
-					
-					FastaSequences.getORFs(oasesDir+"/oasesPipelineMerged/transcripts.fa");
-					
-					
+
+					//FastaSequences.getORFs(oasesDir+"/oasesPipelineMerged/transcripts.fa");
+
+
 					EW.flush();
 					EW.close();
 

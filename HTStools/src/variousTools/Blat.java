@@ -1,14 +1,9 @@
 package variousTools;
 
 import general.ExtendedWriter;
-import general.Functions;
 import general.IOTools;
 
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Hashtable;
-
-import Sequence.FastQSequences;
 
 public class Blat {
 
@@ -48,6 +43,7 @@ public class Blat {
 			String 	sbatchFileName = outDir+"/scripts/"+timestamp+"_blat.sbatch";
 			generalSbatchScript.println("sbatch "+ sbatchFileName);
 
+			this.time = "7:00:00";	
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(sbatchFileName));
 			sbatch.printSBATCHinfoCore(EW,outDir,timestamp,count,"blat", time);
 			EW.println("module load bioinfo-tools");
@@ -64,7 +60,7 @@ public class Blat {
 			if(temp.length > 1)
 				inName = temp[temp.length-1];
 
-			EW.println("blat -out=blast8 -minScore=100 "+referenceFile+" "+inFile+" "+outDir+"/"+refName+"_"+inFile+".blat");
+			EW.println("blat -out=blast8 -minScore=100 "+referenceFile+" "+inFile+" "+outDir+"/"+refName+"_"+inName+".blat");
 
 			EW.flush();
 			EW.close();
