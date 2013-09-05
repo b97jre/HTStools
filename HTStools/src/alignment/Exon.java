@@ -46,10 +46,11 @@ public class Exon extends Object implements Comparable<Exon>{
 		this.left = Integer.parseInt(bedInfo[1]);
 		this.right = Integer.parseInt(bedInfo[2]);
 		this.name = bedInfo[3];
+		if(bedInfo.length > 4){
 		this.dir = bedInfo[5];
 		this.kind = bedInfo[7];
 		this.parent = bedInfo[9];
-
+		}
 	}
 
 	
@@ -62,12 +63,14 @@ public class Exon extends Object implements Comparable<Exon>{
 		if(this.right < otherExon.right) this.right = otherExon.right;
 		if(this.name.compareTo(otherExon.name)!= 0)
 			this.name=this.name+"_"+otherExon.name;
+		if(this.dir != null){
 		if(this.dir.compareTo(otherExon.dir)!= 0)
 			this.dir=this.dir+""+otherExon.dir;
 		if(this.kind.compareTo(otherExon.kind)!= 0)
 			this.kind=this.kind+""+otherExon.kind;
 		if(this.parent.compareTo(otherExon.parent)!= 0)
 			this.parent=this.parent+""+otherExon.parent;
+		}
 		return true;
 	}
 

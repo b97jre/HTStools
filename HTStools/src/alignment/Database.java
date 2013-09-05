@@ -420,6 +420,45 @@ public class Database implements Serializable{
 	}
 
 
+	public void countBEDfilters(int size, double fractionCutoff, ExtendedWriter EW , ExtendedWriter BedEW){
+		if(this.filters == null)return;
+			int bins = this.length/size+1; 
+		int[]counts = new int[bins];  
+		double[] fraction = new double[bins];  
+		int pointer = 0;
+		Collections.sort(this.filters);
+		for(int j = 0; j < this.length; j++ ){
+			if(this.filters.size() > pointer &&this.filters.get(pointer).left <=j){
+				while(this.filters.get(pointer).right > j){
+					counts[j/size]++;
+					j++;
+				}
+				pointer++;
+			}
+		}
+		
+		for(int i = 0; i < counts.length;i++){
+			fraction[i] = (double)counts[i]/(double)size;
+			EW.println(this.Name+"\t"+i*size+"\t"+counts[i]+"\t"+fraction[i] );
+		}
+		
+		
+		boolean abouveCutoff = false;
+		int  count = 0;
+		for(int i = 0; i < counts.length;i++){
+			if(fraction[i] >fractionCutoff){ 
+				BedEW.print(this.Name+"\t"+i*size+"\t");
+				while(i < counts.length && fraction[i] >fractionCutoff){i++;}
+				BedEW.println((i*size+size)+"\tFractionAbove"+count);
+				count++;
+			}
+		}
+		
+
+
+	}
+	
+	
 
 
 	public void printFilters(){
@@ -471,7 +510,7 @@ public class Database implements Serializable{
 				if(this.filters.get(this.filters.size()-1).right<sortedKeys.get(i)){
 					i=sortedKeys.size();
 				} 
-				if(sortedKeys.get(i) <= this.filters.get(pointer).right && sortedKeys.get(i) >= this.filters.get(pointer).left){
+				else if(sortedKeys.get(i) <= this.filters.get(pointer).right && sortedKeys.get(i) >= this.filters.get(pointer).left){
 					SVs.remove(sortedKeys.get(i));
 					System.out.println("removing "+sortedKeys.get(i));
 				}

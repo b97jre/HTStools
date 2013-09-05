@@ -129,10 +129,10 @@ public class Databases implements Serializable{
 
 
 		if(T.containsKey("-addVCFinfo")){
-			
+
 			String file = Functions.getValue(T, "-R", ".");
 			Databases  A= new Databases();
-			
+
 			file = dir+"/"+file;
 			A.getDatabasesSizes(file);
 
@@ -148,8 +148,8 @@ public class Databases implements Serializable{
 				String sampleName = sampleInfo[0]+"_"+sampleInfo[1]+"_"+sampleInfo[2];
 				A.addVCFInfo(files[i],sampleName);
 			}
-			
-			
+
+
 			A.printVCFSample(outDir, VCF+".Sample.vcf",Functions.getValue(T, "-samples"),VCF);
 
 		}
@@ -167,23 +167,40 @@ public class Databases implements Serializable{
 			String BED = Functions.getValue(T, "-BED");
 			A.loadFilterBedFile(BED);
 			A.mergeFilters();
-			
-			
+
+
 			if(!T.containsKey("-complement"))
 				A.filterVCFfiles();
 			else
 				A.filterVCFfilesComplement();
-				
+
 			A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+"."+BED.substring((BED.lastIndexOf("/")+1),BED.lastIndexOf('.'))+".vcf",Functions.getValue(T, "-samples"),VCF);
 
 		}
 
 
-	
-		
-		
-		
-		
+		if(T.containsKey("-binBed")){
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			A.getDatabasesSizes(file);
+
+			String BED = Functions.getValue(T, "-BED");
+			A.loadFilterBedFile(BED);
+			A.mergeFilters();
+			String binFile = BED+".bin";
+			int binSize = Functions.getInt(T, "-binBed", 50000);
+			String newBedFile = binFile+".bed";
+			double fraction = Functions.getDouble(T, "-fraction", 0.3);
+			A.countBEDfilters(binSize,fraction,binFile, newBedFile);
+
+
+		}
+
+
+
+
+
+
 		if(T.containsKey("-annotateSNPs")){
 			String file = Functions.getValue(T, "-R", ".");
 			String FullPathfile = dir+"/"+file;
@@ -196,12 +213,13 @@ public class Databases implements Serializable{
 			A.loadVCFFile(FullPathVCF);
 
 			String BED = Functions.getValue(T, "-BED");
-			String FullPathBED = dir+"/"+BED;
-			
-			A.loadFilterBedFile(FullPathBED);
+			if(!IOTools.fileExists(BED))
+				BED = dir+"/"+BED;
+
+			A.loadFilterBedFile(BED);
 			A.mergeFilters();
 
-			A.annotateVCFfiles(VCF.substring(0,VCF.lastIndexOf('.'))+"."+BED.substring(0,BED.lastIndexOf('.'))+".VCFannotaion");
+			A.annotateVCFfiles(VCF.substring(Math.max(VCF.lastIndexOf('/')+1, 0),VCF.lastIndexOf('.'))+"."+BED.substring(Math.max(BED.lastIndexOf('/')+1, 0),BED.lastIndexOf('.'))+".VCFannotaion");
 
 			//A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+"."+BED.substring(0,BED.lastIndexOf('.'))+".vcf",Functions.getValue(T, "-samples"));
 
@@ -295,7 +313,7 @@ public class Databases implements Serializable{
 
 		}
 
-
+		System.out.println("End of databases");
 
 		//runPrograms(DatabasesDir, DatabasesFile,solidDir, solidFile,resultDir, resultFile,outDir,
 		//			"temp",0,0,T);
@@ -519,8 +537,8 @@ public class Databases implements Serializable{
 			ER.close();
 		}catch(Exception E){E.printStackTrace();}
 	}
-	
-	
+
+
 	private void printVCFSample(String outDir,String resultFile,String sampleString, String inFile){
 
 		try{
@@ -528,7 +546,7 @@ public class Databases implements Serializable{
 				IOTools.mkDir(outDir);
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile));
 			printHeader(EW,inFile);
-			
+
 			// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
 			EW.print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT");
 			if(sampleString != null){
@@ -575,20 +593,35 @@ public class Databases implements Serializable{
 
 	}
 
+	private void countBEDfilters(int size, double fraction, String binFile, String bedFile){
+		try{
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter(binFile)); 
+			ExtendedWriter BedEW = new ExtendedWriter(new FileWriter(bedFile));
+			for(int  i = 0; i < this.Databases2.size(); i++){
+				this.Databases2.get(i).countBEDfilters(size,fraction, EW,BedEW);
+			}
+			EW.flush();
+			EW.close();
+			BedEW.flush();
+			BedEW.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+
 	private void filterVCFfiles(){
 		for(int  i = 0; i < this.Databases2.size(); i++){
 			this.Databases2.get(i).filterVCFinfoOutside();
 		}
 	}
 
-	
+
 	private void filterVCFfilesComplement(){
 		for(int  i = 0; i < this.Databases2.size(); i++){
 			this.Databases2.get(i).filterVCFinfoInside();
 		}
 	}
-	
-	
+
+
 	private void annotateVCFfiles(String VCFfile){
 		try{
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(VCFfile));
@@ -909,13 +942,14 @@ public class Databases implements Serializable{
 			String[] LineInfo = ER.readLine().split("\t");
 			currentDatabase = LineInfo[0];
 			DatabasePointer = findPointer(currentDatabase);
+			
 			System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());
 
 			while(ER.more()){
 				if(currentDatabase.compareTo(LineInfo[0])!=0){
 					System.out.println("Finished");
 					currentDatabase = LineInfo[0];
-					
+
 					DatabasePointer = findPointer(currentDatabase);
 					System.out.println(currentDatabase+"\t=  "+ this.Databases2.get(DatabasePointer).getName());
 					System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());						
@@ -926,7 +960,7 @@ public class Databases implements Serializable{
 					this.Databases2.get(DatabasePointer).addBEDfilterInfo(LineInfo);
 				else{
 					System.out.print("No data for  :"+currentDatabase);
-					
+
 				}
 				LineInfo = ER.readLine().split("\t");
 				//				}
@@ -936,7 +970,7 @@ public class Databases implements Serializable{
 					System.out.print(".");
 				}
 			}
-			
+
 			if(currentDatabase.compareTo(LineInfo[0])!=0){
 				System.out.println("Finished");
 				currentDatabase = LineInfo[0];

@@ -1440,6 +1440,18 @@ public abstract class Functions{
 		}
 		return defaultValue;
 	}
+	
+	public static double getDouble(Hashtable<String,String> T,String key, double defaultValue){
+		if(T.containsKey(key)){
+			String value =  T.get(key);
+			if (value.length() > 0 ){
+				return Double.parseDouble(value);
+			}
+		}
+		return defaultValue;
+	}
+	
+	
 	public static String getValue(Hashtable<String,String> T,String key){
 		if(T.containsKey(key)){
 			String value =  T.get(key);
