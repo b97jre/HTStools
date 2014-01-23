@@ -51,7 +51,7 @@ public class Main {
 		}
 
 		if(program.indexOf("BLAST") == 0){
-			Blast.Main.run(T);
+			Blast.Blast.run(T);
 		}
 
 		if(program.indexOf("CSFASTA") == 0){

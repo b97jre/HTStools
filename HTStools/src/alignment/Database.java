@@ -2,6 +2,8 @@ package alignment;
 
 import general.Functions;
 import general.RNAfunctions;
+
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -40,6 +42,21 @@ public class Database implements Serializable{
 	private double coverage2;
 
 
+
+
+	public void addGFF3LineInfo(String[] columns){
+
+		if(columns[2].indexOf("gene") == 0)addGene(columns);
+		else if(columns[2].indexOf("mRNA") == 0)addmRNA(columns);
+		else if(columns[2].indexOf("exon") == 0)addExon(columns);
+		else if(columns[2].indexOf("chromosome") == 0)getChromosomeInfo(columns);
+		else if(columns[2].indexOf("dr") ==0)addNCRNA(columns);
+		else if(columns[2].indexOf("Dictyostelium discoideum complex repeat") > 0)addRepeat(columns);
+
+	}
+
+
+
 	protected ArrayList <Hit> hits;
 
 
@@ -64,6 +81,10 @@ public class Database implements Serializable{
 
 	}	
 
+
+
+
+
 	Database(String Name, ExtendedReader ER){
 		this.setName(Name);
 		readChromosomeSequence(ER);
@@ -71,8 +92,18 @@ public class Database implements Serializable{
 
 	Database(String Name){
 		this.setName(Name);
+		this.codingGenes = new ArrayList<Gene>();
+		this.ncRNAs = new ArrayList<Gene>();
+		this.repeats = new ArrayList<Gene>();
+
 	}
 
+	public void initiateAnnotation(){
+		this.codingGenes = new ArrayList<Gene>();
+		this.ncRNAs = new ArrayList<Gene>();
+		this.repeats = new ArrayList<Gene>();
+
+	}
 
 
 
@@ -80,6 +111,9 @@ public class Database implements Serializable{
 		if(this.Name.indexOf(name) ==0) return true;
 		return false;
 	}
+
+
+
 
 	public void addCoverage(int start, int stop, String info){
 		this.coverage = (double)(stop-start) / (double)(this.length);
@@ -187,9 +221,8 @@ public class Database implements Serializable{
 		negStrandStd = Functions.getSD(minusStrand, negStrandMean);
 
 		EW.println(this.Name+"\t"+plusStrandMax+"\t"+negStrandMax+"\t"+plusStrandMean+"\t"+plusStrandStd+"\t"+negStrandMean+"\t"+negStrandStd);
-
-
 	}
+
 	public void printMaxSequence(ExtendedWriter EW, int length, int cutoff){
 		int[] plusStrand = new int[this.length];
 		int[] minusStrand = new int[this.length];
@@ -263,7 +296,7 @@ public class Database implements Serializable{
 
 	private void readChromosomeSequence(ExtendedReader ER){
 		int pointer = 0;
-		int[] sequence = new int[10000000];
+		int[] sequence = new int[20000000];
 		while(ER.more() && ER.lookAhead() != '>'){
 			int[] subSequence = RNAfunctions.RNAString2Int(ER.readLine());
 			for(int i = 0; i < subSequence.length;i++){
@@ -308,13 +341,10 @@ public class Database implements Serializable{
 		return this.hits.size();
 	}
 
-
 	public void addVCFinfo(ArrayList<String> Samples, String[] VCFinfo){
 		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
 		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
-		// scaffold_1      5       .       A       T       56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
-
-		
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
 		if(this.SVs == null){
 			this.SVs = new Hashtable<Integer,StructuralVariation>();
 		}
@@ -323,8 +353,76 @@ public class Database implements Serializable{
 			this.SVs.put(Location, new StructuralVariation(Samples,VCFinfo));
 	}
 
+	public void addVCFphase(String sample, String[] VCFinfo, ExtendedWriter EW,int[] info){
+		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+		Integer Location = Integer.decode(VCFinfo[1]);
+		if(this.SVs.containsKey(Location)){
+			this.SVs.get(Location).addPhase(EW,VCFinfo,sample,info);
+			EW.print(this.Name+"\t"+Location+"\t");
+			SVs.get(Location).printSample(EW, sample);
+			EW.println();
+		}
+
+	}
+
+	public void compareVCFinfo(Database otherDatabase, String sample, ExtendedWriter EW){
+		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+
+		if(this.SVs!=null && otherDatabase.SVs != null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(this.SVs.keySet());
+			Collections.sort(sortedKeys);
+			List<Integer> OtherSortedKeys=new ArrayList<Integer>(otherDatabase.SVs.keySet());
+			Collections.sort(OtherSortedKeys);
+
+			int currentPhase = 0;
+
+			int nrOfSNPs = 0;
+			int nrOfIdentical = 0;
+			int start = sortedKeys.get(0);
+			for(int i = 0; i < sortedKeys.size();i++){
+				if(otherDatabase.SVs.containsKey(sortedKeys.get(i))){
+					StructuralVariationSample SV1 = SVs.get(sortedKeys.get(i)).getSample(sample);
+					StructuralVariationSample SV2 = otherDatabase.SVs.get(sortedKeys.get(i)).getSample(sample);
+
+					if(!SV1.isHomozygous()){
+						nrOfSNPs++;
+						if(SV1.isSame(SV2)){
+							nrOfIdentical++;
+						}
+						if(SV1.phaseNr != currentPhase){
+							int stop = sortedKeys.get(i-1);
+			
+							if(nrOfSNPs != 1){
+								if(nrOfIdentical*2 < nrOfSNPs){
+									nrOfIdentical = nrOfSNPs - nrOfIdentical;
+								}
+								EW.println(this.Name+"\t"+currentPhase+"\t"+start+"\t"+stop+"\t"+nrOfSNPs+"\t"+nrOfIdentical);
+							}
+							start = sortedKeys.get(i-1);
+							currentPhase++;
+							nrOfSNPs = 1; 
+							nrOfIdentical = 0;
+							if(SV1.isSame(SV2)){
+								nrOfIdentical++;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+
 	public String[] addVCFSamples(ExtendedReader ER, ArrayList<String> newSamples,String [] VCFinfo){
-		
+
 		if(SVs == null){
 			while(VCFinfo[0].compareTo(this.Name) == 0)
 				VCFinfo = ER.readLine().split("\t");
@@ -358,8 +456,8 @@ public class Database implements Serializable{
 		try{
 			while(ER.more()){
 
-//				System.out.println(this.Name +"\t"+VCFinfo[0]);
-				
+				//				System.out.println(this.Name +"\t"+VCFinfo[0]);
+
 				if(VCFinfo[0].compareTo(this.Name) != 0){
 					System.out.println("Finished");
 					//System.out.println(this.Name +"\t"+VCFinfo[0]);
@@ -376,15 +474,87 @@ public class Database implements Serializable{
 				//System.out.println("testing "+ Location);
 				VCFinfo = ER.readLine().split("\t");
 			}
-			
+
 		}
 		catch(Exception E){
-	//		System.out.println(Location+"\t"+sortedKeys.get(pointer));
+			//		System.out.println(Location+"\t"+sortedKeys.get(pointer));
 			E.printStackTrace();
-			
+
 		}
 		return null;
 	}
+
+
+	public void addPhase(boolean readPhased){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			SVs.get(sortedKeys.get(0)).addPhase(null,readPhased);
+			for(int i = 1; i < sortedKeys.size();i++){
+				SVs.get(sortedKeys.get(i)).addPhase(SVs.get(sortedKeys.get(i-1)),readPhased);
+			}
+		}
+
+
+
+	}
+
+
+	//	public String[] checkPhased(){
+	//		
+	//		List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+	//		Collections.sort(sortedKeys);
+	//		int pointer = 0;
+	//		Integer Location = null;
+	//		int phase = 0;
+	//		for(int i =0 ; i < sortedKeys.size();i++){
+	//			phase = SVs.get(i).getPhase(phase);	
+	//		}
+	//		if(VCFinfo[0].compareTo(this.Name) != 0){
+	//			System.out.println("Finished");
+	//			//System.out.println(this.Name +"\t"+VCFinfo[0]);
+	//			return VCFinfo;
+	//		}
+	//		Location = Integer.decode(VCFinfo[1]);
+	//		while(pointer < sortedKeys.size() && Location > sortedKeys.get(pointer)){
+	//			pointer++;
+	//		}
+	//		if(pointer < sortedKeys.size() && Location.compareTo(sortedKeys.get(pointer)) == 0){
+	//			//System.out.println("adding sample: "+Location+"\t"+sortedKeys.get(pointer));
+	//			this.SVs.get(Location).addSamples(newSamples,VCFinfo);
+	//			VCFinfo = ER.readLine().split("\t");
+	//		}
+	//		try{
+	//			while(ER.more()){
+	//
+	////				System.out.println(this.Name +"\t"+VCFinfo[0]);
+	//				
+	//				if(VCFinfo[0].compareTo(this.Name) != 0){
+	//					System.out.println("Finished");
+	//					//System.out.println(this.Name +"\t"+VCFinfo[0]);
+	//					return VCFinfo;
+	//				}
+	//				Location = Integer.decode(VCFinfo[1]);
+	//				while(pointer < sortedKeys.size() && Location > sortedKeys.get(pointer)){
+	//					pointer++;
+	//				}
+	//				if(pointer < sortedKeys.size() && Location.compareTo(sortedKeys.get(pointer)) == 0 ){
+	//					//System.out.println("adding sample: "+Location+"\t"+sortedKeys.get(pointer));
+	//					this.SVs.get(Location).addSamples(newSamples,VCFinfo);
+	//				}
+	//				//System.out.println("testing "+ Location);
+	//				VCFinfo = ER.readLine().split("\t");
+	//			}
+	//			
+	//		}
+	//		catch(Exception E){
+	//	//		System.out.println(Location+"\t"+sortedKeys.get(pointer));
+	//			E.printStackTrace();
+	//			
+	//		}
+	//		return null;
+	//	}
+
 
 
 
@@ -395,7 +565,7 @@ public class Database implements Serializable{
 
 
 		if(this.filters == null){
-			this.filters = new ArrayList <Exon>();
+			this.filters = new ArrayList<Exon>();
 		}
 		Exon newFilter = new Exon(BEDinfo);
 		this.filters.add(newFilter);
@@ -419,10 +589,38 @@ public class Database implements Serializable{
 
 	}
 
+	public void splitBEDfilters(){
+
+		if(this.filters == null) return;
+		ArrayList <Exon> NewFilters = new ArrayList <Exon>();
+		boolean noMoreSplits = false;
+		while(!noMoreSplits){
+			noMoreSplits = true;
+			Collections.sort(this.filters);
+			boolean noSplits = true;
+			int i = 0;
+			while(i < this.filters.size()-1 && noSplits){
+				if(filters.get(i).overlaps(filters.get(i+1))){
+					ArrayList <Exon> tempFilters = filters.get(i).split(filters.get(i+1));
+					filters.remove(i);
+					filters.remove(i);
+					for(int j = 0; j< tempFilters.size();j++ ){
+						filters.add(tempFilters.get(j));
+					}
+					noSplits = false;
+				}
+				else{
+					i++;	
+				}
+			}
+			noMoreSplits = noSplits;
+		}
+
+	}
 
 	public void countBEDfilters(int size, double fractionCutoff, ExtendedWriter EW , ExtendedWriter BedEW){
 		if(this.filters == null)return;
-			int bins = this.length/size+1; 
+		int bins = this.length/size+1; 
 		int[]counts = new int[bins];  
 		double[] fraction = new double[bins];  
 		int pointer = 0;
@@ -436,14 +634,13 @@ public class Database implements Serializable{
 				pointer++;
 			}
 		}
-		
+
 		for(int i = 0; i < counts.length;i++){
 			fraction[i] = (double)counts[i]/(double)size;
 			EW.println(this.Name+"\t"+i*size+"\t"+counts[i]+"\t"+fraction[i] );
 		}
-		
-		
-		boolean abouveCutoff = false;
+
+
 		int  count = 0;
 		for(int i = 0; i < counts.length;i++){
 			if(fraction[i] >fractionCutoff){ 
@@ -453,12 +650,68 @@ public class Database implements Serializable{
 				count++;
 			}
 		}
-		
+
 
 
 	}
-	
-	
+
+	public void printpreMRNAs(ExtendedWriter EW){
+		if(this.codingGenes != null)
+			for(int i = 0; i< this.codingGenes.size();i++){
+				codingGenes.get(i).printPremRNA(EW,this.sequence);
+			}
+	}
+
+	//	public void printCodingRNAs(ExtendedWriter EW){
+	//		if(this.codingGenes != null)
+	//			for(int i = 0; i< this.codingGenes.size();i++){
+	//				codingGenes.get(i).printCodingRNA(EW,this.sequence,this.Name);
+	//			}
+	//	}
+
+	public void printmRNAs(ExtendedWriter EW){
+		List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+		Collections.sort(sortedKeys);
+		if(this.codingGenes != null)
+			for(int i = 0; i< this.codingGenes.size();i++){
+				codingGenes.get(i).printmRNA(EW,this.sequence,this.Name);
+			}
+	}
+
+	public void printPeronsalmRNAs(ExtendedWriter[] EWs, String[] Samples){
+		ArrayList<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+		Collections.sort(sortedKeys);
+		if(this.codingGenes != null)
+			for(int i = 0; i< this.codingGenes.size();i++){
+				codingGenes.get(i).printPersonalmRNA(EWs,this.sequence,this.Name,this.SVs,sortedKeys,Samples);
+
+			}
+	}
+
+	public void printPersonalmRNAsInfo(ArrayList<String> Samples, ExtendedWriter Info){
+		if(this.SVs != null){
+			ArrayList<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			if(this.codingGenes != null)
+				for(int i = 0; i< this.codingGenes.size();i++){
+					codingGenes.get(i).printPersonalmRNAInfo(this.Name,this.SVs,sortedKeys,Samples, Info);
+
+				}
+		}
+	}
+
+	public void printPersonalmRNAsInfo(String Sample, ExtendedWriter Info){
+		if(this.SVs != null){
+			ArrayList<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			if(this.codingGenes != null)
+				for(int i = 0; i< this.codingGenes.size();i++){
+					codingGenes.get(i).printPersonalmRNAInfo(this.Name,this.SVs,sortedKeys,Sample, Info);
+
+				}
+		}
+	}
+
 
 
 	public void printFilters(){
@@ -468,6 +721,12 @@ public class Database implements Serializable{
 			}
 	}
 
+	public void printFilters(ExtendedWriter EW){
+		if(this.filters != null)
+			for(int i = 0; i< this.filters.size();i++){
+				filters.get(i).printBED(this.Name,EW);
+			}
+	}
 
 
 	public void filterVCFinfoOutside(){
@@ -486,7 +745,7 @@ public class Database implements Serializable{
 				} 
 				else if(sortedKeys.get(i) < this.filters.get(pointer).left){
 					SVs.remove(sortedKeys.get(i));
-					System.out.println("removing "+sortedKeys.get(i));
+					//System.out.println("removing "+sortedKeys.get(i));
 				}
 				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
 					i--;
@@ -512,7 +771,7 @@ public class Database implements Serializable{
 				} 
 				else if(sortedKeys.get(i) <= this.filters.get(pointer).right && sortedKeys.get(i) >= this.filters.get(pointer).left){
 					SVs.remove(sortedKeys.get(i));
-					System.out.println("removing "+sortedKeys.get(i));
+					//System.out.println("removing "+sortedKeys.get(i));
 				}
 				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
 					i--;
@@ -537,7 +796,7 @@ public class Database implements Serializable{
 					return;
 				else if(sortedKeys.get(i) >= this.filters.get(pointer).left && sortedKeys.get(i) <= this.filters.get(pointer).right){
 					EW.println(this.Name+"\t"+sortedKeys.get(i)+"\t"+this.filters.get(pointer).name);
-					
+
 				}
 				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
 					i--;
@@ -546,6 +805,75 @@ public class Database implements Serializable{
 			}
 		}
 	}
+
+
+	public void SkellyFormat(ExtendedWriter EW,String sample){
+		if(SVs!=null){
+			if(this.filters==null){
+				this.SVs=null;
+				return;
+			}
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			int pointer = 0;
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				if(sortedKeys.get(i) > this.filters.get(this.filters.size()-1).right) 
+					return;
+				else if(sortedKeys.get(i) >= this.filters.get(pointer).left && sortedKeys.get(i) <= this.filters.get(pointer).right){
+					if(SVs.get(sortedKeys.get(i)).isHeterozygous(sample))
+						EW.println(this.filters.get(pointer).name+"\t"+this.Name+"_"+sortedKeys.get(i)+"\t"+SVs.get(sortedKeys.get(i)).getMotherCount(sample)+"\t"+SVs.get(sortedKeys.get(i)).getFatherCount(sample));
+				}
+				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
+					i--;
+					pointer++;
+				}
+			}
+		}
+	}
+
+
+
+	public void SplitFilterReadPhased(String sample){
+		if(SVs!=null){
+			if(this.filters==null){
+				this.SVs=null;
+				return;
+			}
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			int pointer = 0;
+			int count = 0; 
+			String filterName = null;
+			ArrayList <Exon> AL = new ArrayList<Exon>();
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				if(sortedKeys.get(i) > this.filters.get(this.filters.size()-1).right) 
+					return;
+				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
+
+					i--;
+					pointer++;
+					count = 0;
+				}
+				else if(sortedKeys.get(i) >= this.filters.get(pointer).left && sortedKeys.get(i) <= this.filters.get(pointer).right){
+					if(SVs.get(sortedKeys.get(i)).isHeterozygous(sample)){
+						if(filterName == null){
+							filterName = this.filters.get(pointer).name;
+						}else{
+							if(!SVs.get(sortedKeys.get(i)).Samples.get(sample).phased){
+								count++;
+							}
+
+						}
+					}
+					//EW.println(this.filters.get(pointer).name+"_"+count+"\t"+this.Name+"_"+sortedKeys.get(i)+"\t"+SVs.get(sortedKeys.get(i)).getMotherCount(sample)+"\t"+SVs.get(sortedKeys.get(i)).getFatherCount(sample));
+				}
+			}
+		}
+	}
+
+
 
 
 
@@ -588,6 +916,24 @@ public class Database implements Serializable{
 		}
 	}
 
+	public void printVCFHetinfoSamples(String sample,ExtendedWriter EW){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				if(!SVs.get(sortedKeys.get(i)).getSample(sample).isHomozygous()){
+					EW.print(this.Name+"\t"+sortedKeys.get(i)+"\t");
+					SVs.get(sortedKeys.get(i)).printSample(EW, sample);
+					EW.println();
+				}
+			}
+		}
+	}
+
+	
+	
+	
 	public void printVCFinfoSamplesRfriendly(ArrayList<String> samples,ExtendedWriter EW){
 		if(SVs!=null){
 			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
@@ -601,8 +947,8 @@ public class Database implements Serializable{
 		}
 	}
 
-	
-	
+
+
 
 	//	public void printVCFinfoRfriendly(String sample,ExtendedWriter EW){
 	//		if(SVs!=null){
@@ -959,6 +1305,203 @@ public class Database implements Serializable{
 
 	public int[] getSequence() {
 		return sequence;
+	}
+
+
+	void addGene(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		boolean plusStrand = true;
+		if(columns[6].indexOf("-") > -1)
+			plusStrand = false;
+		String [] extra = columns[8].split(";");
+		String ID = "wrong";
+		String Name = "";
+		String description = "";
+		if(extra != null){
+			for(int i = 0; i < extra.length; i++){
+				if(extra[i].indexOf("ID=") == 0){
+					String[] IDs = extra[i].split("=");
+					ID = IDs[1];
+				}
+				if(extra[i].indexOf("Name=") == 0){
+					String[] IDs = extra[i].split("=");
+					Name = IDs[1];
+				}
+				if(extra[i].indexOf("description=") == 0){
+					String[] IDs = extra[i].split("=");
+					description = IDs[1];
+				}
+			}
+		}
+		if(ID.indexOf("wrong")==-1){
+			this.ncRNAs.add(new ncRNA(left, right, plusStrand,ID,Name,description));
+		}
+		else{
+			System.out.println("Something wrong when adding gene!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+	}
+
+	private void addRepeat(String[] columns){
+		if(columns [0].compareTo(this.ID) == 0){
+			int left = Integer.parseInt(columns[3]);
+			int right = Integer.parseInt(columns[4]);
+			boolean plusStrand = true;
+			if(columns[6].indexOf("-") > -1)
+				plusStrand = false;
+			String [] extra = columns[8].split("\"");
+			String ID = "wrong";
+			if(extra != null){
+				ID = extra[1];
+			}
+			if(ID.indexOf("wrong")==-1)this.repeats.add(new Repeat(left, right, plusStrand,ID));
+			else{
+				System.out.println("Something wrong when adding repeat!");
+				for(int i = 0; i < columns.length; i++){
+					System.out.print(columns[i]+"\t");
+				}
+				System.out.println();
+			}
+		}
+
+	}
+
+
+	private void addNCRNA(String[] columns){
+		if(columns[0].compareTo("Dictyostelium_discoideum_chromosome_"+this.Name) == 0){
+			int left = Integer.parseInt(columns[3]);
+			int right = Integer.parseInt(columns[4]);
+			boolean plusStrand = true;
+			if(columns[6].indexOf("-") > -1)
+				plusStrand = false;
+			String ID = columns[8];
+			String Name = columns[8];
+			String description = "GC rich ncRNA";
+			this.ncRNAs.add(new ncRNA(left, right, plusStrand,ID,Name,description));
+		}
+	}
+
+
+
+	private boolean addmRNA(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		boolean plusStrand = true;
+		if(columns[6].indexOf("-") > -1)
+			plusStrand = false;
+		String [] extra = columns[8].split(";");
+		String ID = "wrong";
+		String Name = "";
+		String description = "";
+		String parent = "";
+		if(extra != null){
+			for(int i = 0; i < extra.length; i++){
+				if(extra[i].indexOf("ID=") == 0){
+					String[] IDs = extra[i].split("=");
+					ID = IDs[1];
+				}
+				if(extra[i].indexOf("Name=") == 0){
+					String[] IDs = extra[i].split("=");
+					Name = IDs[1];
+				}
+				if(extra[i].indexOf("Parent=") == 0){
+					String[] IDs = extra[i].split("=");
+					parent = IDs[1];
+				}
+			}
+		}
+		if(ID.indexOf("wrong")==-1){
+			mRNA newmRNA = new mRNA(left, right, plusStrand,ID,Name,parent,description);
+			for(int i = this.ncRNAs.size()-1;i > -1; i--){
+				if(this.ncRNAs.get(i).isParent(newmRNA)){
+					CodingGene newCG = new CodingGene();
+					newCG.setInfo(ncRNAs.get(i));
+					newCG.addmRNA(newmRNA);
+					this.codingGenes.add(newCG);
+					this.ncRNAs.remove(i);
+					this.ncRNAs.trimToSize();
+					i--;
+					return true;
+				}
+			}
+			for(int i = this.codingGenes.size()-1;i > -1; i--){
+				CodingGene temp = (CodingGene)this.codingGenes.get(i);
+				if(temp.addmRNA(newmRNA)){
+					this.codingGenes.remove(i);
+					this.codingGenes.add(i,temp);
+					return true;
+				}
+			}
+
+		}
+		else{
+			System.out.println("Something wrong when adding mRNA!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+		return false;
+
+	}
+
+	private boolean addExon(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		String parent = "wrong";
+		String [] extra = columns[8].split(";");
+		String ID = "wrong";
+		String Name = "";
+		String description = "";
+
+		if(extra != null){
+			for(int i = 0; i < extra.length; i++){
+				if(extra[i].indexOf("ID=") == 0){
+					String[] IDs = extra[i].split("=");
+					ID = IDs[1];
+				}
+				if(extra[i].indexOf("Name=") == 0){
+					String[] IDs = extra[i].split("=");
+					Name = IDs[1];
+				}
+				if(extra[i].indexOf("Parent=") == 0){
+					String[] IDs = extra[i].split("=");
+					parent = IDs[1];
+				}
+			}
+		}
+		if(parent.indexOf("wrong")==-1){
+			Exon newExon = new Exon(left, right, parent);
+			codingGenes.trimToSize();
+			for(int i = this.codingGenes.size()-1;i > -1; i--){
+				CodingGene temp = (CodingGene)this.codingGenes.get(i);
+				if(temp.addExon(newExon)){
+					this.codingGenes.remove(i);
+					this.codingGenes.add(i,temp);
+					return true;
+				}
+			}
+		}
+		else{
+			System.out.println("Something wrong when adding exon!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+		/*			System.out.println("Something wrong when adding exon!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+
+		 */
+		return false;
+
 	}
 
 

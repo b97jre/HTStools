@@ -36,9 +36,6 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 	private Hashtable <String,Pair> pairs;
 	boolean trinity;
 	boolean oases;
-	
-
-
 
 	public static void main(String []args){
 		int length = args.length;
@@ -54,7 +51,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 	SamSequences(){
 		length = 10;
 		missmatches = 3;
-		inside = 300;
+		inside = 500;
 		this.pairs = new Hashtable <String,Pair>();
 		trinity = false;
 		oases = false;
@@ -67,14 +64,14 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 		String dir = Functions.getValue(T, "-d", IOTools.getCurrentPath());
 		if(T.containsKey("-ref") ){
 			String inFile = Functions.getValue(T, "-ref");
-			
+
 
 			if(T.containsKey("-extract") && T.containsKey("-i")){
 				System.out.println("running samtools parsing....");
 				String samFile = Functions.getValue(T, "-i");
-				
+
 				int cutoff = Functions.getInt(T, "-C", 10);
-				
+
 				Hashtable<String,String> flags = new Hashtable<String,String>();
 				SamSequences A = new SamSequences();
 				if(T.containsKey("-trinity")) A.trinity= true;
@@ -119,7 +116,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 					else
 						A.mergeTrinityReads(dir);
 					A.printAllFasta(dir+"/AllSequences_ends.fa");
-					
+
 				} 
 				if(T.containsKey("-samPairs") ){
 					System.out.println("merging new five and three prime ends....");
@@ -127,27 +124,30 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 					Hashtable<String,Integer> sizes = A.getSizes(inFile,dir);
 					Hashtable<String,String> flags = new Hashtable<String,String>();
 					flags.clear();
-					
+
 					if(!T.containsKey("-direction")){
-					flags.put("161","161");
-					flags.put("97","97");
-					flags.put("65","65");
-					flags.put("129","129");
-					flags.put("113","113");
-					flags.put("177","177");
-					flags.put("81","81");
-					flags.put("145","145");
+						flags.put("161","161");
+						flags.put("97","97");
+						flags.put("65","65");
+						flags.put("129","129");
+						flags.put("113","113");
+						flags.put("177","177");
+						flags.put("81","81");
+						flags.put("145","145");
 					}
 					else{
 						flags.put("161","161");
 						flags.put("97","97");
 					}
-					
+
+
+					System.out.println("Parsing pairs");
 					A.parsePairs(samFile,flags,sizes);
 					System.out.println("Reading fasta files....");
 					A.printAllPairs(samFile+".merged");
 					System.out.println("Merging ends....");
 					A.mergePairs();
+					System.out.println("Merging ends....");
 					A.printAllFasta(dir+"/AllSequences_merged.fa");
 
 				}
@@ -167,25 +167,26 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				String hitName = e.nextElement();
 				//System.out.println(hitName);
 				Pair A = pairs.get(hitName);
-				FastaSequences B = A.ref1;
-				FastaSequences C = A.ref2;
-				if(B != null && C != null){
-					if(A.end1.compareTo("3end") == 0 && A.end2.compareTo("5end") == 0){
-						//System.out.println("--->|--->  3|5");
-						mergeSequences(B,C,false,false,A.nrOfHits);
-					}
-					else if(A.end1.compareTo("3end") == 0 && A.end2.compareTo("3end") == 0){
-						//System.out.println("--->|<---	 3|3");
-						mergeSequences(B,C,false,true,A.nrOfHits);
-					}
-					else if( A.end1.compareTo("5end") == 0 && A.end2.compareTo("5end") == 0){
-						//System.out.println("<---|--->  5|5");
-						mergeSequences(B,C,true,false,A.nrOfHits);
-					}
-					else if ( A.end1.compareTo("5end") == 0 && A.end2.compareTo("3end") == 0){
-						//System.out.println("<---|<---  5|3"); 
-						
-						mergeSequences(B,C,true,true,A.nrOfHits);
+				if(A.nrOfHits > 1){
+					FastaSequences B = this.get(A.refName1);
+					FastaSequences C = this.get(A.refName2);
+					if(B != null && C != null){
+						if(A.end1.compareTo("3end") == 0 && A.end2.compareTo("5end") == 0){
+							//System.out.println("--->|--->  3|5");
+							mergeSequences(B,C,false,false,A.nrOfHits);
+						}
+						else if(A.end1.compareTo("3end") == 0 && A.end2.compareTo("3end") == 0){
+							//System.out.println("--->|<---	 3|3");
+							mergeSequences(B,C,false,true,A.nrOfHits);
+						}
+						else if( A.end1.compareTo("5end") == 0 && A.end2.compareTo("5end") == 0){
+							//System.out.println("<---|--->  5|5");
+							mergeSequences(B,C,true,false,A.nrOfHits);
+						}
+						else if ( A.end1.compareTo("5end") == 0 && A.end2.compareTo("3end") == 0){
+							//System.out.println("<---|<---  5|3"); 
+							mergeSequences(B,C,true,true,A.nrOfHits);
+						}
 					}
 				}
 
@@ -193,23 +194,114 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 		}catch(Exception E){E.printStackTrace();}
 	}
 
-	
-	public void mergeSequences(FastaSequences temp, FastaSequences FE, boolean reverse, boolean reverse2, int nrOfHits){
-		String seq = temp.getName();
-		String FEseq = FE.getName();
+
+	public void mergeSequencesORFs(FastaSequences temp, FastaSequences FE, boolean reverse, boolean reverse2, int nrOfHits){
+
+
 		FastaSequences temp2 =  new FastaSequences();
 		temp2.Name = temp.Name;
 		FastaSequences FE2 =  new FastaSequences();
 		FE2.Name = FE.Name;
+
+
+
 		//int length = this.length;
 		int length = 5;
+
 		if(nrOfHits < 4)
 			length = 10;
 		else if(nrOfHits < 10)
 			length = 5;
 		int tempSize = temp.size();
 		int FEsize = FE.size();
+		//
+		//		System.out.println();
+		//		System.out.println("Before");
+		//		System.out.println(FastaName+"\t"+this.get(FastaName).size()+"\t"+tempSize);
+		//		System.out.println(OtherFastaName+"\t"+this.get(OtherFastaName).size()+"\t"+FEsize);
+		//		System.out.println();
+		//		
+		//		
+		for(int i = 0; i < tempSize;i++){
+			FastaSequence tempSeq = temp.get(i);
+			int [] seq2 = tempSeq.getSequence();
+			if(reverse)seq2 = RNAfunctions.getReverseComplement(seq2);
+			for(int j = 0; j < FEsize;j++){
+				FastaSequence tempSeqFP = FE.get(j);
+				int [] seqFP = tempSeqFP.getSequence();
+				if(reverse2)seqFP = RNAfunctions.getReverseComplement(seqFP);
+				int[] newSeq = RNAfunctions.merge3endIfORF(seqFP, seq2, length, missmatches, inside);
+				int[] newSeqRev = RNAfunctions.getReverseComplement(newSeq);
+				if(newSeq.length > seq2.length){
+					String FastaName = tempSeq.getName().substring(1);
+					String OtherFastaName = tempSeqFP.getName().substring(1);
+					FastaSequence nSeq = null;
+					if(reverse){
+						
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeqRev); 
+					}else{
+						
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeq); 
+					}
+					temp2.add(nSeq);
+					FastaSequence nSeq2 = null;
+					if(reverse){
+						nSeq2 = new FastaSequence(OtherFastaName+"_Merged_"+FastaName,newSeqRev); 
+					}else{
+						nSeq2 = new FastaSequence(OtherFastaName+"_Merged_"+FastaName,newSeq); 
+					}
+					FE2.add(nSeq2);
+					System.out.println(FastaName+"_"+OtherFastaName+"_"+reverse+"_"+reverse2+"_"+nrOfHits);
+				}
+			}
 
+		}
+		for(int i = 0; i < tempSize;i++){temp2.add(temp.get(i));}
+		for(int j = 0; j < FEsize;j++){FE2.add(FE.get(j));}
+		//		if(temp2.size() > tempSize){
+		//			for(int i = 0 ; i < temp2.size();i++){
+		//				System.out.println(temp2.get(i).getName()+"\t"+temp2.get(i).getLength());
+		//			}
+		//		}
+		//		
+		//		if(FE2.size() > FEsize){
+		//			for(int i = 0 ; i < FE2.size();i++){
+		//				System.out.println(FE2.get(i).getName()+"\t"+FE2.get(i).getLength());
+		//			}
+		//		}
+		//		
+		String FastaName = temp.getName();
+		String OtherFastaName = FE.getName();
+		this.put(FastaName, temp2);
+		this.put(OtherFastaName, FE2);
+		//		
+		//		System.out.println("After");
+		//		System.out.println(FastaName+"\t"+this.get(FastaName).size());
+		//		System.out.println(OtherFastaName+"\t"+this.get(OtherFastaName).size());
+		//		System.out.println();
+	}
+
+
+	public void mergeSequences(FastaSequences temp, FastaSequences FE, boolean reverse, boolean reverse2, int nrOfHits){
+
+
+		//int length = this.length;
+		int length = 5;
+
+		if(nrOfHits < 4)
+			length = 25;
+		else if(nrOfHits < 10)
+			length = 10;
+		int tempSize = temp.size();
+		int FEsize = FE.size();
+		//
+		//		System.out.println();
+		//		System.out.println("Before");
+		//		System.out.println(FastaName+"\t"+this.get(FastaName).size()+"\t"+tempSize);
+		//		System.out.println(OtherFastaName+"\t"+this.get(OtherFastaName).size()+"\t"+FEsize);
+		//		System.out.println();
+		//		
+		//		
 		for(int i = 0; i < tempSize;i++){
 			FastaSequence tempSeq = temp.get(i);
 			int [] seq2 = tempSeq.getSequence();
@@ -220,32 +312,79 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				if(reverse2)seqFP = RNAfunctions.getReverseComplement(seqFP);
 				int[] newSeq = RNAfunctions.merge3end(seqFP, seq2, length, missmatches, inside);
 				int[] newSeqRev = RNAfunctions.getReverseComplement(newSeq);
+				String FastaName = tempSeq.getName();
+				String OtherFastaName = tempSeqFP.getName();
+
+				
 				if(newSeq.length > seq2.length){
+					FastaSequences temp2 =  new FastaSequences();
+					temp2.Name = FastaName+"_Merged_"+OtherFastaName;
+					
 					FastaSequence nSeq = null;
 					if(reverse){
-						nSeq = new FastaSequence(seq+"Merged"+i,newSeqRev); 
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeqRev); 
 					}else{
-						nSeq = new FastaSequence(seq+"Merged"+i,newSeq); 
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeq); 
 					}
 					temp2.add(nSeq);
-					if(reverse){
-						nSeq = new FastaSequence(FEseq+"Merged"+i,newSeqRev); 
-					}else{
-						nSeq = new FastaSequence(FEseq+"Merged"+i,newSeq); 
-					}
-					FE2.add(nSeq);
-					System.out.println(seq+"_"+FEseq+"_"+reverse+"_"+reverse2+"_"+nrOfHits);
+					this.put(FastaName, temp2);
 				}
 			}
-			
+
 		}
-		for(int i = 0; i < tempSize;i++){temp2.add(temp.get(i));}
-		for(int j = 0; j < FEsize;j++){FE2.add(FE.get(j));}
-		this.put(seq, temp2);
-		this.put(FEseq, FE2);
 	}
 
 
+	
+	
+	public void removeRedundantSequences(){
+		
+	}
+	
+/*	public void mergeSequencesAgain(FastaSequences temp, FastaSequences FE){
+
+		int tempSize = temp.size();
+		int FEsize = FE.size();
+		//
+		//		System.out.println();
+		//		System.out.println("Before");
+		//		System.out.println(FastaName+"\t"+this.get(FastaName).size()+"\t"+tempSize);
+		//		System.out.println(OtherFastaName+"\t"+this.get(OtherFastaName).size()+"\t"+FEsize);
+		//		System.out.println();
+		//		
+		//		
+		for(int i = 0; i < tempSize;i++){
+			FastaSequence tempSeq = temp.get(i);
+			int [] seq2 = tempSeq.getSequence();
+			for(int j = 0; j < FEsize;j++){
+				boolean found  = false;
+				FastaSequence tempSeqFP = FE.get(j);
+				int [] seqFP = tempSeqFP.getSequence();
+				int[] newSeq = RNAfunctions.merge3end(seqFP, seq2, 100, 0, seq2.length-100);
+				int[] newSeq1 = RNAfunctions.merge3end(RNAfunctions.getReverseComplement(seqFP), seq2, 100, 0, seq2.length-100);
+				int[] newSeq2 = RNAfunctions.merge3end(seqFP, RNAfunctions.getReverseComplement(seq2), 100, 0, seq2.length-100);
+				int[] newSeq3 = RNAfunctions.merge3end(RNAfunctions.getReverseComplement(seqFP), RNAfunctions.getReverseComplement(seq2), 100, 0, seq2.length-100);
+					
+					
+				if(newSeq.length > seq2.length){
+					FastaSequences temp2 =  new FastaSequences();
+					temp2.Name = FastaName+"_Merged_"+OtherFastaName;
+					
+					FastaSequence nSeq = null;
+					if(reverse){
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeqRev); 
+					}else{
+						nSeq = new FastaSequence(FastaName+"_Merged_"+OtherFastaName,newSeq); 
+					}
+					temp2.add(nSeq);
+					this.put(FastaName, temp2);
+				}
+			}
+
+		}
+	}
+	
+	*/
 	public void parseFile(String inFile, Hashtable<String,String> flags){
 		try{
 			ExtendedReader ER = new ExtendedReader(new FileReader(inFile));
@@ -335,9 +474,9 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			ER.close();
 		}catch(Exception E){E.printStackTrace();}
 	}
-	
-	
-	
+
+
+
 
 	public void parseFasta(String inFile){
 		try{
@@ -461,8 +600,8 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			String[] hitInfo = info[2].split("_");
 			String hitName = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2];
 			int location = Integer.parseInt(info[3]);
-//			System.out.println(location+ " "+ hitName);
-//			System.out.println(sizes.get(hitName).intValue());
+			//			System.out.println(location+ " "+ hitName);
+			//			System.out.println(sizes.get(hitName).intValue());
 			if(sizes.containsKey(hitName) && location+inside > sizes.get(hitName).intValue()){
 				FastaSequence A = new FastaSequence(info[0], RNAfunctions.getReverseComplement(info[9]));
 				if(this.containsKey(hitName)){
@@ -493,7 +632,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			if(hitInfo.length > 2){
 				String hitName2 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2];
 				int tag = Integer.parseInt(info[1]);
-				if(hitName1.compareTo(hitName2) != 0  && contig.compareTo(hitInfo[0]) != 0){
+				if(hitName1.compareTo(hitName2) != 0 ){
 					if((tag == 97) &&  leftPos+inside > sizes.get(hitName1).intValue() && rightPos < inside)
 						addPair(hitName1,"3end",hitName2,"5end",tag);
 					else if((tag == 65) &&  leftPos+inside > sizes.get(hitName1).intValue() && rightPos+inside > sizes.get(hitName1).intValue())
@@ -544,6 +683,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				if(A.size()>1){
 					for(int i = 0; i < A.size();i++){
 						A.get(i).Name =A.get(i).Name+"0"+i; 
+						System.out.println(A.get(i).Name);
 					}
 				}
 				A.printFasta(EW);
@@ -583,7 +723,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			String infoLine = EW.readLine();
 			//System.out.println(infoLine);
 			String[] info = infoLine.split("\\ ");
-			
+
 			String hitName = info[0];
 			if(trinity){
 				String[] hitInfo = info[0].split("_");
@@ -600,7 +740,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			FS.add(A);
 			hitName = hitName.substring(1);
 			FS.Name = hitName;
-			System.out.println(hitName);
+			//System.out.println(hitName);
 			this.put(hitName, FS);
 		}
 	}
@@ -612,14 +752,14 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			//System.out.println(infoLine);
 			String[] info = infoLine.split("\\ ");
 			String[] hitInfo = info[0].split("_");
-//			int length = Integer.parseInt(info[1].split("=")[1]);
+			//			int length = Integer.parseInt(info[1].split("=")[1]);
 
 			String hitName = hitInfo[0].substring(1)+"_"+hitInfo[1]+"_"+hitInfo[2];
 			String Sequence = EW.readLine();
-//			if(Sequence.length() == length)
-				HT.put(hitName, new Integer(Sequence.length()));
-//			else
-//				System.out.println(hitName+"\t"+length+" "+Sequence.length());
+			//			if(Sequence.length() == length)
+			HT.put(hitName, new Integer(Sequence.length()));
+			//			else
+			//				System.out.println(hitName+"\t"+length+" "+Sequence.length());
 		}
 	}
 
@@ -636,10 +776,10 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			int point = 1;
 			for(int i = 0; i < dirs.size();i++){
 				if(IOTools.fileExists(dir+"/Fend/"+dirs.get(i)+"/Trinity.fasta")){
-//					System.out.println("checking " + dirs.get(i) );
+					//					System.out.println("checking " + dirs.get(i) );
 					FastaSequences FE = new FastaSequences(dir+"/Fend/"+dirs.get(i)+"/Trinity.fasta");
 					mergeSequencesFEnd(FE,dirs.get(i));
-//					System.out.println(i);
+					//					System.out.println(i);
 				}
 				if((i*100)/dirs.size()>percent){
 					System.out.print(""+percent+"%");
@@ -651,8 +791,8 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				}
 			}
 
-			
-			
+
+
 			System.out.println("..100%");
 			System.out.print("Reading directory for 3' ends....");
 			//dirs = IOTools.getDirectories(dir+"/Tend");
@@ -727,7 +867,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 				int [] seq = tempSeq.getSequence();
 				boolean better = false;
 				for(int j = 0; j < FE.size();j++){
-//					System.out.println("test");
+					//					System.out.println("test");
 					FastaSequence tempSeqFP = FE.get(j);
 					int [] seqFP = tempSeqFP.getSequence();
 					int[] newSeq = RNAfunctions.merge5end(seqFP, seq, length, missmatches, inside);

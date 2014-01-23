@@ -1,5 +1,6 @@
 package general;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.text.DateFormat;
@@ -8,11 +9,44 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 
+import alignment.StructuralVariation;
+
 import general.ExtendedReader;
 
 
 public abstract class Functions{
 
+	public static void main(String []args){
+		//to test the different subfunctions 
+		//System.out.println(getFileWithoutSuffix("test.fastq","fastq"));
+	}
+	
+
+	
+	public static int[] sum(int[] A, int [] B){
+		if(A.length != B.length ){
+			System.out.println("Error in Function.Sum");
+			System.out.println("Two arrays of different lengths can not be summed");
+			return null;
+		}
+		for(int i = 0; i < A.length; i++){
+			A[i] = A[i]+B[i];
+		}
+		return A;
+	}
+
+	public static int[] subtract(int[] A, int [] B){
+		if(A.length != B.length ){
+			System.out.println("Error in Function.subtract");
+			System.out.println("Two arrays of different lengths can not be subtracted");
+			return null;
+		}
+		for(int i = 0; i < A.length; i++){
+			A[i] = A[i]-B[i];
+		}
+		return A;
+	}
+	
 	public static Hashtable<String, String> parseCommandLine(String[] args)
 	{
 		int len = args.length;
@@ -25,12 +59,24 @@ public abstract class Functions{
 			{
 				key = args[i];
 				val = new String();
-				while (i+1 < args.length && args[i+1].charAt(0) != '-')
-				{
-					val += args[i+1] + " ";
-					i++;
+				if(i+1 < args.length && args[i+1].charAt(0) == '\''){
+					
+					while (i+1 < args.length && (args[i+1].charAt(args[i+1].length()-1) != '\'' || args[i+1].charAt(0) != '\''))
+					{
+						val += args[i+1] + " ";
+						i++;
+					}
+					val = val.substring(1,val.length()-2);
+				}
+				else{
+					while (i+1 < args.length && args[i+1].charAt(0) != '-')
+					{
+						val += args[i+1] + " ";
+						i++;
+					}
 				}
 				val = val.trim();
+				System.out.println(key+"\t"+val);
 				commands.put(key,val);
 			}
 			else
@@ -168,6 +214,20 @@ public abstract class Functions{
 
 		return newDoubleArray;
 	}
+
+	public static int countOccurrences(String haystack, char[] needles)
+	{
+		int count = 0;
+		for (int i=0; i < haystack.length(); i++){
+			for(int j = 0; j < needles.length; j++){
+				if (haystack.charAt(i) == needles[j]){
+					//System.out.println("jsut checking");
+					count++;
+				}
+			}
+		}
+		return count;
+	}	
 
 
 	public static Hashtable<String, String> getKeys(Hashtable<String,String> HT, String file){
@@ -1310,7 +1370,7 @@ public abstract class Functions{
 
 	} 
 
-	
+
 	public static boolean contains(ArrayList<String> StringArray,String newString){
 		if(StringArray == null)
 			return false;
@@ -1391,7 +1451,7 @@ public abstract class Functions{
 		newList.addAll(listTwo);
 		return newList;
 	}
-	
+
 	public static ArrayList<String> getStringsWithPrefix(ArrayList<String> listOne, String prefix){
 		ArrayList<String> newList = new ArrayList<String>();
 		for(int i = 0; i< listOne.size(); i++){
@@ -1400,9 +1460,9 @@ public abstract class Functions{
 		}
 		return newList;
 	}
-	
-	
-	
+
+
+
 	public static Object[] addObject(Object[] objects, Object newObject ){
 		if(objects == null){
 			objects = new Object[1];
@@ -1440,7 +1500,7 @@ public abstract class Functions{
 		}
 		return defaultValue;
 	}
-	
+
 	public static double getDouble(Hashtable<String,String> T,String key, double defaultValue){
 		if(T.containsKey(key)){
 			String value =  T.get(key);
@@ -1450,8 +1510,19 @@ public abstract class Functions{
 		}
 		return defaultValue;
 	}
-	
-	
+
+	public static String getFileWithoutSuffix(String filename, String suffix){
+		if(filename.indexOf(suffix) > -1 && filename.lastIndexOf(suffix) + suffix.length() == filename.length()){
+			String fileNameWithoutSuffix = filename.substring(0,filename.lastIndexOf(suffix));
+			fileNameWithoutSuffix.trim();
+			if(fileNameWithoutSuffix.lastIndexOf(".") == (fileNameWithoutSuffix.length()-1))
+				fileNameWithoutSuffix = fileNameWithoutSuffix.substring(0,fileNameWithoutSuffix.length()-1);
+			return fileNameWithoutSuffix;
+		}
+		System.out.println("Suffix not found");
+		return filename;
+	}
+
 	public static String getValue(Hashtable<String,String> T,String key){
 		if(T.containsKey(key)){
 			String value =  T.get(key);

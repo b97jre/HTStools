@@ -3,11 +3,15 @@ package alignment;
 import general.Functions;
 import general.IOTools;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 
 import sun.org.mozilla.javascript.internal.EcmaError;
 
@@ -30,7 +34,8 @@ public class Databases implements Serializable{
 	private static final long serialVersionUID = 1L;
 	//private String GenomeName;
 	private String Name;
-	protected ArrayList <Database> Databases2;
+	protected Hashtable <String,Database> Databases2;
+	protected String[] DatabaseOrder;
 	protected ArrayList <String> samples;
 	protected CfastaSequences solidSequences;
 
@@ -52,7 +57,7 @@ public class Databases implements Serializable{
 
 	Databases(String Name,String DatabasesDir,String DatabasesFile ){
 		this.Name = Name;
-		this.Databases2 = new ArrayList<Database>();
+		this.Databases2 = new Hashtable<String,Database>();
 		//System.out.print("Reads database files .......");
 		this.loadDatabasesFile(DatabasesDir, DatabasesFile);
 		//System.out.println("finished");
@@ -60,14 +65,14 @@ public class Databases implements Serializable{
 
 	Databases(String DatabasesFile ){
 		this.Name = "temp";
-		this.Databases2 = new ArrayList<Database>();
+		this.Databases2 = new Hashtable<String,Database>();
 		//System.out.print("Reads database files .......");
 		this.loadDatabasesFile(DatabasesFile);
 		//System.out.println("finished");
 	}	
 
 	public Databases(){
-		this.Databases2 = new ArrayList<Database>();
+		this.Databases2 = new Hashtable<String,Database>();
 	}
 
 
@@ -83,14 +88,37 @@ public class Databases implements Serializable{
 
 
 
+	public void addGFF3Annotation(String dir, String fileName){
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (dir+"/"+fileName));
+
+			while(ER.more()){
+				if((char)ER.lookAhead() == '#'){
+					ER.skipLine();
+				}
+				else{
+					readInfo(ER.readLine());
+				}
+			}
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+	private void readInfo(String GFF3line){
+		String[] columns = GFF3line.split("\t");
+		String DatabaseID = columns[0];
+
+		if(this.Databases2.containsKey(DatabaseID))
+			this.Databases2.get(DatabaseID).addGFF3LineInfo(columns);
+		else
+			System.out.println(GFF3line);
+	}
+
 
 
 
 	public static void run(Hashtable<String,String> T){
 
 		String dir = Functions.getValue(T, "-d", IOTools.getCurrentPath());
-		String solidDir = Functions.getValue(T, "-solidDir", ".");
-		String solidFile = Functions.getValue(T, "-solidFile", "sequences.cfasta");
 		String resultDir = Functions.getValue(T, "-resultDir", ".");
 		String resultFile = Functions.getValue(T, "-resultFile", "test.out.vcf");
 		String DatabasesDir = Functions.getValue(T, "-DatabasesDir", resultDir);
@@ -102,21 +130,153 @@ public class Databases implements Serializable{
 			String file = Functions.getValue(T, "-R", ".");
 			Databases  A= new Databases();
 			A.getDatabasesSizes(file);
-
 			String VCF = Functions.getValue(T, "-VCF");
 			A.loadVCFFile(VCF);
-
-
-
 			A.printVCFSample(outDir, VCF+".Sample.vcf",Functions.getValue(T, "-samples"),VCF);
-
 		}
+		
+		
+		if(T.containsKey("-getPhasedInterVCFinfo")){
+			boolean readPhased = true;
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			
+			A.getDatabasesSizes(dir+"/"+file);
+			
+			String VCF = Functions.getValue(T, "-VCF");
+			A.loadVCFFile(dir+"/"+VCF);
+			A.addPhase(readPhased);
+			
+			String sample = Functions.getValue(T, "-sample");
+			String outFile = Functions.getValue(T, "-o",sample+".heterozygous."+VCF );
+
+			A.printVCFHeterozygousSample(dir,outFile,sample,VCF);
+		}
+		
+
+		
+		if(T.containsKey("-comparePhasedVCFinfo")){
+			boolean readPhased = true;
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			
+			A.getDatabasesSizes(dir+"/"+file);
+			
+			String VCF = Functions.getValue(T, "-VCF");
+			A.loadVCFFile(dir+"/"+VCF);
+			A.addPhase(readPhased);
+			
+			Databases  B= new Databases();
+			B.getDatabasesSizes(dir+"/"+file);
+			String VCF2 = Functions.getValue(T, "-VCF2");
+			B.loadVCFFile(dir+"/"+VCF2);
+			B.addPhase(!readPhased);
+			
+			String sample = Functions.getValue(T, "-sample");
+			try{
+				ExtendedWriter EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+".phased.diff");
+				A.compareVCFFiles(B,sample,EW);
+			}catch(Exception E){
+				E.printStackTrace();
+			}
+		}
+		
+		
+		
+		if(T.containsKey("-getTranscripts")){
+			boolean readPhased = false;
+			if(T.containsKey("-readPhased"))readPhased = true;
+			if(T.containsKey("-transmissionPhased"))readPhased = false;
+			if(!T.containsKey("-readPhased") && !T.containsKey("-transmissionPhased")){
+				System.out.println("must contain flag if it is phased by reads or transmission");
+				System.out.println("-readPhased or -transmissionPhased");				
+				return;
+			}
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			String annotationFile = null;
+			A.loadDatabasesFile(dir+"/"+file);
+			if(T.containsKey("-gff3")){
+				A.initiateAnnotation();
+				annotationFile = Functions.getValue(T, "-gff3", ".");
+				A.addGFF3Annotation(dir,annotationFile);
+			}
+			if(T.containsKey("-bed")){
+				System.out.println("bed annotation not written yet");
+				//				String annotationFile = Functions.getValue(T, "-bed", ".");
+				//				A.addBEDAnnotation(annotationFile);
+			}
+			if(T.containsKey("-gtf")){
+				System.out.println("GTF annotation not written yet");
+
+				//				String annotationFile = Functions.getValue(T, "-gtf", ".");
+				//				A.addGTFAnnotation(annotationFile);
+			}
+
+			String VCF = Functions.getValue(T, "-VCF");
+			if(!IOTools.fileExists(VCF)){
+				if(IOTools.fileExists(dir+"/"+VCF)) VCF = dir+"/"+VCF;
+			}
+			
+			
+			A.loadVCFFile(VCF);
+			A.addPhase(readPhased);
+			
+			A.printPeronsalmRNAsInfo(dir, annotationFile+".mRNA");
+			
+			A.printpreMRNAs(dir, annotationFile+".preMRNAs.fa");
+			A.printmRNAs(dir, annotationFile+".mRNA.fa");
+		}
+
+		if(T.containsKey("-phaseVCFfile")){
+			boolean readPhased = false;
+			if(T.containsKey("-readPhased"))readPhased = true;
+			if(T.containsKey("-transmissionPhased"))readPhased = false;
+			if(!T.containsKey("-readPhased") && !T.containsKey("-transmissionPhased")){
+				System.out.println("must contain flag if it is phased by reads or transmission");
+				System.out.println("-readPhased or -transmissionPhased");				
+				return;
+			}
+			String file = Functions.getValue(T, "-R", ".");
+			if(!IOTools.fileExists(file)){
+				if(IOTools.fileExists(dir+"/"+file)) file = dir+"/"+file;
+				else {System.out.println(dir+"/"+file+" not found"); return;}
+			}
+			Databases  A= new Databases();
+			String annotationFile = null;
+			A.loadDatabasesFile(file);
+	
+			String VCF = Functions.getValue(T, "-VCF");
+			if(!IOTools.fileExists(VCF)){
+				if(IOTools.fileExists(dir+"/"+VCF)) VCF = dir+"/"+VCF;
+				else {System.out.println(dir+"/"+VCF+" not found"); return;}
+			}
+			
+			A.loadVCFFile(VCF);
+			A.addPhase(readPhased);
+			System.out.println();
+			String[] unphased = Functions.getValue(T, "-unphased").split(",");
+			for(int i = 0; i < unphased.length;i++){
+				String filePath = unphased[i];
+				if(!IOTools.fileExists(filePath)){
+					if(IOTools.fileExists(dir+"/"+unphased)) filePath = dir+"/"+filePath;
+				}
+				String fileName = new File(filePath).getName();
+				String UnphasedDir = new File(filePath).getParent();
+				A.phaseVCFfile(UnphasedDir,fileName);
+			}
+//			A.printPeronsalmRNAsInfo(dir, annotationFile+".mRNA");
+//			
+//			A.printpreMRNAs(dir, annotationFile+".preMRNAs.fa");
+//			A.printmRNAs(dir, annotationFile+".mRNA.fa");
+		}
+
 
 		if(T.containsKey("-printVCFinfoRfriendly")){
 			String file = Functions.getValue(T, "-R", ".");
 			Databases  A= new Databases();
 			A.getDatabasesSizes(file);
-
+			
 			String VCF = Functions.getValue(T, "-VCF");
 			A.loadVCFFile(VCF);
 
@@ -179,6 +339,31 @@ public class Databases implements Serializable{
 		}
 
 
+		if(T.containsKey("-gatherGeneinfo")){
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			A.getDatabasesSizes(file);
+
+			String VCF = Functions.getValue(T, "-VCF");
+			A.loadVCFFile(VCF);
+
+			String BED = Functions.getValue(T, "-BED");
+			A.loadFilterBedFile(BED);
+			A.mergeFilters();
+
+
+			if(!T.containsKey("-complement"))
+				A.filterVCFfiles();
+			else
+				A.filterVCFfilesComplement();
+
+			A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+"."+BED.substring((BED.lastIndexOf("/")+1),BED.lastIndexOf('.'))+".vcf",Functions.getValue(T, "-samples"),VCF);
+
+		}
+
+
+
+
 		if(T.containsKey("-binBed")){
 			String file = Functions.getValue(T, "-R", ".");
 			Databases  A= new Databases();
@@ -196,6 +381,22 @@ public class Databases implements Serializable{
 
 		}
 
+		if(T.containsKey("-binBedCount")){
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			A.getDatabasesSizes(file);
+
+			String BED = Functions.getValue(T, "-BED");
+			A.loadFilterBedFile(BED);
+			A.mergeFilters();
+			String binFile = BED+".bin";
+			int binSize = Functions.getInt(T, "-binBed", 50000);
+			String newBedFile = binFile+".bed";
+			double fraction = Functions.getDouble(T, "-fraction", 0.3);
+			A.countBEDfilters(binSize,fraction,binFile, newBedFile);
+		}
+		
+		
 
 
 
@@ -217,7 +418,7 @@ public class Databases implements Serializable{
 				BED = dir+"/"+BED;
 
 			A.loadFilterBedFile(BED);
-			A.mergeFilters();
+			A.mergeFilters();	
 
 			A.annotateVCFfiles(VCF.substring(Math.max(VCF.lastIndexOf('/')+1, 0),VCF.lastIndexOf('.'))+"."+BED.substring(Math.max(BED.lastIndexOf('/')+1, 0),BED.lastIndexOf('.'))+".VCFannotaion");
 
@@ -225,7 +426,44 @@ public class Databases implements Serializable{
 
 		}
 
+		if(T.containsKey("-SkellyFormat")){
+			String file = Functions.getValue(T, "-R", ".");
+			if(!IOTools.fileExists(file)){
+				if(IOTools.fileExists(dir+"/"+file)) file = dir+"/"+file;
+				else {System.out.println(dir+"/"+file+" not found"); return;}
+			}
 
+			Databases  A= new Databases();
+			A.getDatabasesSizes(file);
+			String BED = Functions.getValue(T, "-BED");
+			if(!IOTools.fileExists(BED)){
+				if(IOTools.fileExists(dir+"/"+BED)) BED = dir+"/"+BED;
+				else {System.out.println(dir+"/"+BED+" not found"); return;}
+			}
+			if(!IOTools.fileExists(BED))
+				BED = dir+"/"+BED;
+
+			String VCF = Functions.getValue(T, "-VCF");
+			if(!IOTools.fileExists(VCF)){
+				if(IOTools.fileExists(dir+"/"+VCF)) VCF = dir+"/"+VCF;
+				else {System.out.println(dir+"/"+VCF+" not found"); return;}
+			}
+			A.loadVCFFile(VCF);
+
+
+			
+			A.loadFilterBedFile(BED);
+			A.mergeFilters();	
+			
+
+			A.SkellyFormat(dir+"/"+VCF.substring(Math.max(VCF.lastIndexOf('/')+1, 0),VCF.lastIndexOf('.'))+"."+BED.substring(Math.max(BED.lastIndexOf('/')+1, 0),BED.lastIndexOf('.')));
+
+			//A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+"."+BED.substring(0,BED.lastIndexOf('.'))+".vcf",Functions.getValue(T, "-samples"));
+
+		}
+
+		
+		
 
 
 		if(T.containsKey("-onlyHeterozygous")){
@@ -237,8 +475,14 @@ public class Databases implements Serializable{
 			A.loadVCFFile(VCF);
 
 			A.removeHomozygous(Functions.getValue(T, "-sample"));
-			A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+".heterozygous.vcf",null,VCF);
-
+			if(T.containsKey("-strict")){
+				
+				A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+".heterozygous.vcf",Functions.getValue(T, "-sample"),VCF);
+				
+			}
+			else
+				A.printVCFSample(outDir, VCF.substring(0,VCF.lastIndexOf('.'))+".heterozygous.vcf",null,VCF);
+				
 		}
 
 		if(T.containsKey("-onlyHomozygous")){
@@ -273,9 +517,20 @@ public class Databases implements Serializable{
 			A.printFilters();
 			A.mergeFilters();
 			A.printFilters();
-
+		}
+		
+		if(T.containsKey("-splitBed")){
+			String file = Functions.getValue(T, "-R", ".");
+			Databases  A= new Databases();
+			A.getDatabasesSizes(dir+"/"+file);
+			String BED = Functions.getValue(T, "-BED");
+			A.loadFilterBedFile(dir+"/"+BED);
+			A.splitFilters();
+			String outBed = BED.substring(0,BED.lastIndexOf("."))+"split.bed"; 
+			A.printFilters(dir+"/"+outBed);
 
 		}
+		
 
 
 
@@ -430,7 +685,7 @@ public class Databases implements Serializable{
 	private int getNrOfHits(){
 		int total = 0;
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			total += this.Databases2.get(i).getNrOfHits();
+			total += Databases2.get(this.DatabaseOrder[i]).getNrOfHits();
 		}
 		return total;
 	}
@@ -449,7 +704,7 @@ public class Databases implements Serializable{
 	private int countLocations(){
 		int total = 0;
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			total += this.Databases2.get(i).countLocations();
+			total += Databases2.get(this.DatabaseOrder[i]).countLocations();
 		}
 		return total;
 	}
@@ -464,16 +719,16 @@ public class Databases implements Serializable{
 				IOTools.mkDir(outDir);
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile+".distribution.overview"));
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).printOverallDistribution(EW,cutoff);
+				Databases2.get(this.DatabaseOrder[i]).printOverallDistribution(EW,cutoff);
 			}
 			EW.flush();
 			EW.close();
 
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				String Name = IOTools.fixFileName(this.Databases2.get(i).getName());
+				String Name = IOTools.fixFileName(Databases2.get(this.DatabaseOrder[i]).getName());
 				EW = new ExtendedWriter(new FileWriter(outDir+"/"+Name+"."+resultFile+".distribution"));
-				this.Databases2.get(i).printDistribution(EW,cutoff);
-				int length = this.Databases2.get(i).getLength();
+				Databases2.get(this.DatabaseOrder[i]).printDistribution(EW,cutoff);
+				int length = Databases2.get(this.DatabaseOrder[i]).getLength();
 				if(Name.indexOf("miRNAstart=") > -1){
 					//int A = Integer.parseInt(Name.substring(Name.indexOf("miRNAstart=")+11));
 					if(Name.indexOf(",") != -1)
@@ -518,7 +773,7 @@ public class Databases implements Serializable{
 			}	
 			EW.println();
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).printVCFinfoSamplesRfriendly(this.samples, EW);
+				Databases2.get(this.DatabaseOrder[i]).printVCFinfoSamplesRfriendly(this.samples, EW);
 			}
 			EW.flush();
 			EW.close();
@@ -539,8 +794,30 @@ public class Databases implements Serializable{
 	}
 
 
+	private void printVCFHeterozygousSample(String outDir,String resultFile,String sample, String inFile){
+
+		System.out.print("Writing the VCF sample to the 2"+resultFile+"........");
+		try{
+			if(!IOTools.isDir(outDir))
+				IOTools.mkDir(outDir);
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile));
+			printHeader(EW,inFile);
+
+			// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+			EW.println("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t"+sample);
+			for(int  i = 0; i < this.Databases2.size(); i++){
+				Databases2.get(this.DatabaseOrder[i]).printVCFHetinfoSamples(sample, EW);
+			}
+			EW.flush();
+			EW.close();
+		}
+		catch(Exception E){E.printStackTrace();}
+		System.out.println("Finished");
+	}
+
 	private void printVCFSample(String outDir,String resultFile,String sampleString, String inFile){
 
+		System.out.print("Writing the VCF sample to the 2"+resultFile+"........");
 		try{
 			if(!IOTools.isDir(outDir))
 				IOTools.mkDir(outDir);
@@ -557,30 +834,44 @@ public class Databases implements Serializable{
 				}
 			}
 			for(int i  = 0 ; i < this.samples.size(); i++){
+				System.out.println(this.samples.get(i));
 				EW.print("\t"+this.samples.get(i));
 			}
 			EW.println();
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).printVCFinfoSamples(this.samples, EW);
+				Databases2.get(this.DatabaseOrder[i]).printVCFinfoSamples(this.samples, EW);
 			}
 			EW.flush();
 			EW.close();
 		}
 		catch(Exception E){E.printStackTrace();}
-
+		System.out.println("Finished");
 	}
 
+	
+	
 	private void printFilters(){
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).printFilters();
+			Databases2.get(this.DatabaseOrder[i]).printFilters();
 		}
-
 	}
 
+	private void printFilters(String file){
+		try{
+		ExtendedWriter EW = ExtendedWriter.getFileWriter(file);
+		for(int  i = 0; i < this.Databases2.size(); i++){
+			Databases2.get(this.DatabaseOrder[i]).printFilters(EW);
+		}
+		}catch(Exception E){
+			E.printStackTrace();
+		}
+	}
+
+	
 	private void sortFilters(){
 		int total = 0;
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).sortBEDfilters();
+			Databases2.get(this.DatabaseOrder[i]).sortBEDfilters();
 		}
 
 	}
@@ -588,17 +879,25 @@ public class Databases implements Serializable{
 	private void mergeFilters(){
 		int total = 0;
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).mergeBEDfilters();
+			Databases2.get(this.DatabaseOrder[i]).mergeBEDfilters();
 		}
-
 	}
 
+	private void splitFilters(){
+		int total = 0;
+		for(int  i = 0; i < this.Databases2.size(); i++){
+			Databases2.get(this.DatabaseOrder[i]).splitBEDfilters();
+		}
+	}
+	
+	
+	
 	private void countBEDfilters(int size, double fraction, String binFile, String bedFile){
 		try{
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(binFile)); 
 			ExtendedWriter BedEW = new ExtendedWriter(new FileWriter(bedFile));
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).countBEDfilters(size,fraction, EW,BedEW);
+				Databases2.get(this.DatabaseOrder[i]).countBEDfilters(size,fraction, EW,BedEW);
 			}
 			EW.flush();
 			EW.close();
@@ -609,16 +908,20 @@ public class Databases implements Serializable{
 
 
 	private void filterVCFfiles(){
+		System.out.print("Keeping reads that are within the regioins reported in the bed file......");
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).filterVCFinfoOutside();
+			Databases2.get(this.DatabaseOrder[i]).filterVCFinfoOutside();
 		}
+		System.out.println("Finished");
 	}
 
 
 	private void filterVCFfilesComplement(){
+		System.out.print("Keeping reads that are not within the regioins reported in the bed file......");
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).filterVCFinfoInside();
+			Databases2.get(this.DatabaseOrder[i]).filterVCFinfoInside();
 		}
+		System.out.println("Finished");
 	}
 
 
@@ -626,7 +929,7 @@ public class Databases implements Serializable{
 		try{
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(VCFfile));
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).annotateVCFinfo(EW);
+				Databases2.get(this.DatabaseOrder[i]).annotateVCFinfo(EW);
 			}
 			EW.flush();
 			EW.close();
@@ -635,6 +938,21 @@ public class Databases implements Serializable{
 		}
 	}
 
+	private void SkellyFormat(String SkellyFile){
+		try{
+			ExtendedWriter[] EW = new ExtendedWriter[samples.size()];
+			for(int j = 0; j < samples.size();j++){
+				EW[j] = ExtendedWriter.getFileWriter(SkellyFile+"_"+samples.get(j)+".Skelly");
+				for(int  i = 0; i < this.Databases2.size(); i++){
+						Databases2.get(this.DatabaseOrder[i]).SkellyFormat(EW[j],samples.get(j));
+				}
+				EW[j].flush();
+				EW[j].close();
+			}
+		}catch(Exception E){
+			E.printStackTrace();
+		}
+	}
 
 
 
@@ -650,7 +968,7 @@ public class Databases implements Serializable{
 			samples2 = this.samples;
 		}
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).removeHomozygous(samples2);
+			Databases2.get(this.DatabaseOrder[i]).removeHomozygous(samples2);
 		}
 
 	}
@@ -667,7 +985,7 @@ public class Databases implements Serializable{
 			samples2 = this.samples;
 		}
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).removeHeterozygous(samples2);
+			Databases2.get(this.DatabaseOrder[i]).removeHeterozygous(samples2);
 		}
 
 	}
@@ -683,7 +1001,7 @@ public class Databases implements Serializable{
 	//				IOTools.mkDir(outDir);
 	//			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile));
 	//			for(int  i = 0; i < this.Databases2.size(); i++){
-	//				this.Databases2.get(i).printVCFinfoSample(sample, EW);
+	//				Databases2.get(this.DatabaseOrder[i]).printVCFinfoSample(sample, EW);
 	//			}
 	//			EW.flush();
 	//			EW.close();
@@ -703,7 +1021,7 @@ public class Databases implements Serializable{
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile));
 			ArrayList<String> samples = new ArrayList<String>();
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).printVCFinfoSamples(samples, EW);
+				Databases2.get(this.DatabaseOrder[i]).printVCFinfoSamples(samples, EW);
 			}
 			EW.flush();
 			EW.close();
@@ -721,7 +1039,7 @@ public class Databases implements Serializable{
 				IOTools.mkDir(outDir);
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outDir+"/"+resultFile+".maxSequences.overview"));
 			for(int  i = 0; i < this.Databases2.size(); i++){
-				this.Databases2.get(i).printMaxSequence(EW, length, cutoff);
+				Databases2.get(this.DatabaseOrder[i]).printMaxSequence(EW, length, cutoff);
 			}
 			EW.flush();
 			EW.close();
@@ -742,7 +1060,7 @@ public class Databases implements Serializable{
 		ER.println("Name,chromosome,ratio,"+exp1+","+exp2+",location,nrOfHits in "+ exp1+" = "+nrOfHits+",nrOfHits in "+ exp2+" = "+otherNrOfHits);
 
 		for(int  i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).compareDistribution(otherRun.Databases2.get(i),ER);
+			Databases2.get(this.DatabaseOrder[i]).compareDistribution(otherRun.Databases2.get(i),ER);
 		}
 	}
 
@@ -759,7 +1077,8 @@ public class Databases implements Serializable{
 			while(ER.more()){
 				while(ER.lookAhead() != '>')ER.skipLine();
 				String DatabaseName = ER.readLine().substring(1);
-				this.Databases2.add(new Database(DatabaseName,ER));
+				this.DatabaseOrder = Functions.addString(DatabaseOrder, DatabaseName);
+				this.Databases2.put(DatabaseName,new Database(DatabaseName,ER));
 				count++;
 				if(count > progress){
 					System.out.println("sequences read :"+ progress);
@@ -779,13 +1098,18 @@ public class Databases implements Serializable{
 				String DatabaseName = ER.readLine().substring(1);
 				Database A = new Database(DatabaseName);
 				A.getChromosomeSequenceSize(ER);
-				this.Databases2.add(A);
+				this.Databases2.put(DatabaseName,A);
+				this.DatabaseOrder = Functions.addString(this.DatabaseOrder, DatabaseName);
 				count++;
 				if(count > progress){
 					System.out.println("sequences read :"+ progress);
 					progress += 1000;
 				}
 			}
+			System.out.println("Reading fastafile  :"+ fileName);
+			System.out.println("Number of contigs  :"+ this.Databases2.size());
+			
+			
 		}catch(Exception E){E.printStackTrace();}
 	}
 
@@ -845,17 +1169,19 @@ public class Databases implements Serializable{
 				samples.add(infoArray[i]);
 				System.out.println(infoArray[i]);
 			}
-			System.out.print("Now gathering vcf data from :"+this.Databases2.get(DatabasePointer).getName());
+			
+			System.out.print("Now gathering vcf data from :"+this.DatabaseOrder[DatabasePointer]);
 			while(ER.more()){
 				String[] LineInfo = ER.readLine().split("\t");
-				while(DatabasePointer < this.Databases2.size() && this.Databases2.get(DatabasePointer).getName().compareTo(LineInfo[0])!=0){
+				while(DatabasePointer < this.Databases2.size() && this.DatabaseOrder[DatabasePointer].compareTo(LineInfo[0])!=0){
 					System.out.println("Finished");
 					DatabasePointer++;
-					System.out.print("Now gathering vcf data for :"+this.Databases2.get(DatabasePointer).getName());
+					if(DatabasePointer < this.Databases2.size())
+					System.out.print("Now gathering vcf data for :"+this.DatabaseOrder[DatabasePointer]);
 				}
 				//				if(DatabasePointer > this.Databases2.size())System.out.println(LineInfo[0]+"\t"+LineInfo[1]);
 				//				else{
-				this.Databases2.get(DatabasePointer).addVCFinfo(samples, LineInfo);
+				this.Databases2.get(this.DatabaseOrder[DatabasePointer]).addVCFinfo(samples, LineInfo);
 				//				}
 				count++;
 				if(count > progress ){
@@ -867,6 +1193,68 @@ public class Databases implements Serializable{
 		}catch(Exception E){E.printStackTrace();}
 	}
 
+
+	public void compareVCFFiles(Databases OtherDataBase, String sample, ExtendedWriter EW){
+		for(int i = 0; i < this.DatabaseOrder.length ; i++){
+			if(OtherDataBase.Databases2.containsKey(DatabaseOrder[i])){
+				this.Databases2.get(DatabaseOrder[i]).compareVCFinfo(OtherDataBase.Databases2.get(DatabaseOrder[i]),sample, EW);
+			}
+		}
+	
+	}
+	
+	
+	public void phaseVCFfile(String dir, String fileName){
+		//	0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       T       56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader(dir+"/"+fileName));
+			ExtendedWriter EW = ExtendedWriter.getFileWriter(fileName.substring(0,fileName.length()-3)+"phased.vcf");
+			int count = 0;
+			int DatabasePointer = 0;
+			int progress = 1000;
+			String info = ER.readLine();
+			while(ER.more() && ER.lookAhead() == '#'){
+				info = ER.readLine();
+				EW.println(info);
+			}
+			EW.println(info);
+			String [] infoArray = info.split("\t");
+			String sample = infoArray[9];
+			int[] phaseInfo = new int[5]; 
+			System.out.print("Now phasing vcf data for sample "+sample +"from file "+fileName);
+			
+			System.out.println ("Now phasing vcf data for :"+this.DatabaseOrder[DatabasePointer]);
+			while(ER.more()){
+				String[] LineInfo = ER.readLine().split("\t");
+				while(DatabasePointer < this.Databases2.size() && this.DatabaseOrder[DatabasePointer].compareTo(LineInfo[0])!=0){
+					System.out.println("Finished");
+					DatabasePointer++;
+					if(DatabasePointer < this.Databases2.size())
+					System.out.print("Now phasing vcf data for :"+this.DatabaseOrder[DatabasePointer]);
+				}
+				//				if(DatabasePointer > this.Databases2.size())System.out.println(LineInfo[0]+"\t"+LineInfo[1]);
+				//				else{
+				this.Databases2.get(this.DatabaseOrder[DatabasePointer]).addVCFphase(sample, LineInfo, EW, phaseInfo);
+				//				}
+				count++;
+				if(count > progress ){
+					progress += 10000;
+					System.out.print(".");
+				}
+			}
+			System.out.println("Finished");
+
+			System.out.println("PhaseInfo");
+			System.out.println(phaseInfo[0]+"\t"+phaseInfo[1]+"\t"+phaseInfo[2]+"\t"+phaseInfo[3]+"\t"+phaseInfo[4]);
+			
+			
+			
+		}catch(Exception E){E.printStackTrace();}
+	}
 
 
 	public void addVCFInfo(String fileName,String sampleName){
@@ -939,30 +1327,26 @@ public class Databases implements Serializable{
 			while(ER.more() && ER.lookAhead() == '#'){
 				ER.readLine();
 			}
-			String[] LineInfo = ER.readLine().split("\t");
-			currentDatabase = LineInfo[0];
-			DatabasePointer = findPointer(currentDatabase);
-			
-			System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());
+
+			System.out.print("loading info from "+fileName+"................");
 
 			while(ER.more()){
-				if(currentDatabase.compareTo(LineInfo[0])!=0){
-					System.out.println("Finished");
-					currentDatabase = LineInfo[0];
-
-					DatabasePointer = findPointer(currentDatabase);
-					System.out.println(currentDatabase+"\t=  "+ this.Databases2.get(DatabasePointer).getName());
-					System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());						
-				}
-				//				if(DatabasePointer > this.Databases2.size())System.out.println(LineInfo[0]+"\t"+LineInfo[1]);
-				//				else{
-				if(DatabasePointer!= -1)
-					this.Databases2.get(DatabasePointer).addBEDfilterInfo(LineInfo);
+				String[] LineInfo = ER.readLine().split("\t");
+//				if(currentDatabase.compareTo(LineInfo[0])!=0){
+//					System.out.println("Finished");
+//					currentDatabase = LineInfo[0];
+//
+//					DatabasePointer = findPointer(currentDatabase);
+//					System.out.println(currentDatabase+"\t=  "+ this.Databases2.get(DatabasePointer).getName());
+//					System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());						
+//				}
+//				//				if(DatabasePointer > this.Databases2.size())System.out.println(LineInfo[0]+"\t"+LineInfo[1]);
+//				//				else{
+				if(this.Databases2.containsKey(LineInfo[0]))
+					this.Databases2.get(LineInfo[0]).addBEDfilterInfo(LineInfo);
 				else{
-					System.out.print("No data for  :"+currentDatabase);
-
+					System.out.print("No data for  :"+LineInfo[0]);
 				}
-				LineInfo = ER.readLine().split("\t");
 				//				}
 				count++;
 				if(count > progress ){
@@ -970,15 +1354,15 @@ public class Databases implements Serializable{
 					System.out.print(".");
 				}
 			}
-
-			if(currentDatabase.compareTo(LineInfo[0])!=0){
-				System.out.println("Finished");
-				currentDatabase = LineInfo[0];
-				DatabasePointer = findPointer(currentDatabase);
-				System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());						
-			}
-
-			this.Databases2.get(DatabasePointer).addBEDfilterInfo(LineInfo);
+//
+//			if(currentDatabase.compareTo(LineInfo[0])!=0){
+//				System.out.println("Finished");
+//				currentDatabase = LineInfo[0];
+//				DatabasePointer = findPointer(currentDatabase);
+//				System.out.print("Now gathering filter data for :"+this.Databases2.get(DatabasePointer).getName());						
+//			}
+//
+//			this.Databases2.get(DatabasePointer).addBEDfilterInfo(LineInfo);
 			System.out.println("Finished");
 		}catch(Exception E){E.printStackTrace();}
 	}
@@ -995,21 +1379,113 @@ public class Databases implements Serializable{
 	private int findDatabase(String name){
 		int pointer = -1;
 		for(int i = 0; i < this.Databases2.size(); i++){
-			if(this.Databases2.get(i).isDatabase(name)){
+			if(Databases2.get(this.DatabaseOrder[i]).isDatabase(name)){
 				pointer = i;
 				i = this.Databases2.size();
 			}
 		}
 		return pointer;
 	}
+
 	private void printCoverage(){
 		int pointer = -1;
 		for(int i = 0; i < this.Databases2.size(); i++){
-			this.Databases2.get(i).printCoverage();
+			Databases2.get(this.DatabaseOrder[i]).printCoverage();
 		}
 	}
 
+	
+	public void addPhase(boolean readPhased){	
+		Enumeration<String> enumKey = Databases2.keys();
+		while(enumKey.hasMoreElements()) {
+		    String key = enumKey.nextElement();
+			this.Databases2.get(key).addPhase(readPhased);
+		}
+	}
+	
 
+	private void printpreMRNAs(String dir, String outFile){
+		try{
+			ExtendedWriter EW = ExtendedWriter.getFileWriter(dir+"/"+outFile);
+			Enumeration<String> enumKey = Databases2.keys();
+			while(enumKey.hasMoreElements()) {
+			    String key = enumKey.nextElement();
+				this.Databases2.get(key).printpreMRNAs(EW);
+			}
+			EW.flush();
+			EW.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+	
+	
+	public void printPeronsalmRNAs(String dir, String outFile, String[] Samples){
+		try{
+			ExtendedWriter[] EWs =  new ExtendedWriter[Samples.length];
+			for(int i = 0 ; i < Samples.length;i++){
+				EWs[i] = ExtendedWriter.getFileWriter(dir+"/"+outFile+"_"+Samples[i]);
+			}
+			Enumeration<String> enumKey = Databases2.keys();
+			while(enumKey.hasMoreElements()) {
+			    String key = enumKey.nextElement();
+				this.Databases2.get(key).printPeronsalmRNAs(EWs,Samples);
+			}
+			for(int i = 0 ; i < Samples.length;i++){
+				EWs[i].flush();
+				EWs[i].close();
+			}
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+		public void printPeronsalmRNAsInfo(String dir, String outFile){
+			try{
+				ExtendedWriter info = ExtendedWriter.getFileWriter(dir+"/"+outFile+".info");
+				Enumeration<String> enumKey = Databases2.keys();
+				while(enumKey.hasMoreElements()) {
+				    String key = enumKey.nextElement();
+					this.Databases2.get(key).printPersonalmRNAsInfo(samples,info);
+				}
+				info.flush();
+				info.close();
+			System.out.println();
+			for(int i = 0; i < samples.size();i++){
+				enumKey = null;
+				info = ExtendedWriter.getFileWriter(dir+"/"+outFile+"."+samples.get(i)+".info");
+				enumKey = Databases2.keys();
+				while(enumKey.hasMoreElements()) {
+					String key = enumKey.nextElement();
+					this.Databases2.get(key).printPersonalmRNAsInfo(samples.get(i),info);
+				}
+				info.flush();
+				info.close();
+			}
+		}catch(Exception E){E.printStackTrace();}
+			
+		}	
+		
+	private void printmRNAs(String dir, String outFile){
+		try{
+			ExtendedWriter EW = ExtendedWriter.getFileWriter(dir+"/"+outFile);
+			Enumeration<String> enumKey = Databases2.keys();
+			while(enumKey.hasMoreElements()) {
+			    String key = enumKey.nextElement();
+				this.Databases2.get(key).printmRNAs(EW);
+			}
+			EW.flush();
+			EW.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+
+
+	
+	private void initiateAnnotation(){
+		Enumeration<String> enumKey = Databases2.keys();
+		while(enumKey.hasMoreElements()) {
+		    String key = enumKey.nextElement();
+		    Databases2.get(key).initiateAnnotation();
+		}
+		
+	}
 
 }
 

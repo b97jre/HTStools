@@ -29,6 +29,8 @@ public class FastaSequence extends Object implements Serializable {
 	
 	
 	
+	
+	
 	FastaSequence(String Name, String Sequence){
 		this.Name = Name;
 		this.Sequence = RNAfunctions.RNAString2Int2(Sequence);
@@ -42,25 +44,32 @@ public class FastaSequence extends Object implements Serializable {
 		this.Sequence = null;
 		this.nrOfHits = null;
 		this.covered = 0;
-		
 	}
 	
 	
-	boolean isStop(int A,int B, int C){
+	static boolean  isStop(int A,int B, int C){
 		if(A==4 && B==1 && C ==3) return true;//UAG
 		if(A==4 && B==1 && C ==1) return true;//UAA
 		if(A==4 && B==3 && C ==1) return true;//UGA
 		return false;		
 	}
-	boolean isStart(int A,int B, int C){
+
+	static boolean isStart(int A,int B, int C){
 		if(A==1 && B==4 && C ==3) return true;//AUG
 		return false;		
+	}
+	
+	private String getKind(int kindID){
+		if(kindID==0) return "ORF";
+		if(kindID==1) return "5UTR";
+		if(kindID==2) return "3UTR";
+		else return "FULL";
 	}
 	
 	public void findLongestORF(double cutoff,ExtendedWriter info,ExtendedWriter ORFs,ExtendedWriter F2PSeq, ExtendedWriter proteinSeq,GeneticCode GC){
 		int[][] allInfo =  findLongestORFinfo();
 		
-		info.println(this.Name+"\t"+allInfo[0][3]+"\t"+allInfo[1].length+"\t"+this.Sequence.length+"\t"+allInfo[0][0]+"\t"+allInfo[0][1]+"\t"+allInfo[0][2]);
+		info.println(this.Name+"\t"+allInfo[0][3]+"\t"+allInfo[1].length+"\t"+this.Sequence.length+"\t"+allInfo[0][0]+"\t"+allInfo[0][1]+"\t"+getKind(allInfo[0][2])+"\t"+RNAfunctions.getGCcontent(this.Sequence));
 		ORFs.println(this.Name);
 		ORFs.println(RNAfunctions.RNAInt2String(allInfo[1]));
 		if(allInfo[0][3]==1){
@@ -81,8 +90,6 @@ public class FastaSequence extends Object implements Serializable {
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][0], seq));
 			else
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][4], seq));
-			
-			
 		}
 		else{
 			F2PSeq.println(this.Name+"_forward");
@@ -104,6 +111,15 @@ public class FastaSequence extends Object implements Serializable {
 		}
 		
 	}
+	
+	private static int findLongestORFlength(int[] sequence){
+		int[] forward = findLongestORFStrand(sequence);
+		int[] reverse = findLongestORFStrand(RNAfunctions.getReverseComplement(sequence));
+		
+		return Math.max(forward.length,reverse.length);
+		
+	}
+	
 	
 	private int[][] findLongestORFinfo(){
 		int[] forward = findLongestORFStrand(this.Sequence);
@@ -132,7 +148,7 @@ public class FastaSequence extends Object implements Serializable {
 			finalInfo[1] = reverse[reverse.length-2];//stop
 			finalInfo[2] = reverse[reverse.length-4];//kind
 			finalInfo[3] = -1;//direction
-			finalInfo[4] = reverse[reverse.length-1];//frame;//frame
+			finalInfo[4] = reverse[reverse.length-1];//frame;
 			finalSeq = removeInfo(reverse);
 		}
 		int[][] allInfo = new int[2][0];
@@ -155,9 +171,9 @@ public class FastaSequence extends Object implements Serializable {
 		return A.findLongestORFinfo();
 	}
 	
+
 	
-	
- public int[] findLongestORFStrand(int[] Sequence){
+ public static int[] findLongestORFStrand(int[] Sequence){
 		int length = 0;
 		int start = 0;
 		int frame = 0;
@@ -211,6 +227,53 @@ public class FastaSequence extends Object implements Serializable {
 		return ORF;
 		
 	}
+ 	
+ public static int findLongestORFLength(int[] Sequence){
+	 int[] revSequence = RNAfunctions.getReverseComplement(Sequence);
+	 return Math.max(FastaSequence.findLongestORFStrandLength(Sequence),FastaSequence.findLongestORFStrandLength(revSequence));
+ } 
+ 
+		
+ 
+ 
+public static int findLongestORFStrandLength(int[] Sequence){
+		int length = 0;
+		int start = 0;
+		int frame = 0;
+
+		for(int i = 0; i < 3;i++){
+			int j = 0+i;
+			int tempStart = 0;
+			boolean started = true;
+			while(j < Sequence.length-2){
+				if(isStop(Sequence[j],Sequence[j+1],Sequence[j+2]) && started){
+					if(j - tempStart > length){
+						start = tempStart;
+						length = j+2 - tempStart;
+						frame =i;
+					}
+					started = false;
+				}
+				if(!started && isStart(Sequence[j],Sequence[j+1],Sequence[j+2])){
+					tempStart = j;
+					started=true;
+				}
+				j = j+3;
+			}
+			if(started){
+				if(Sequence.length - tempStart > length){
+					start = tempStart;
+					length = Sequence.length - tempStart;
+					frame =i;
+				}
+				started = false;
+			}
+		}
+		
+		return length;
+		
+	}
+
 	
 
 	public FastaSequence(){

@@ -754,6 +754,7 @@ public class IntramolecularStructures  implements Serializable{
 				}
 			}
 			PTTFileReader.close();
+			
 
 		}
 		catch(Exception E){
@@ -765,22 +766,29 @@ public class IntramolecularStructures  implements Serializable{
 	}
 
 	public static IntramolecularStructures getDotBracketStructure(String FileName,String Dir){
+		ExtendedReader PTTFileReader = null;
 		try{
-			ExtendedReader PTTFileReader = null;
 			PTTFileReader = new ExtendedReader(new FileReader(Dir+"/"+FileName));
 			//skipFAline
 			while(PTTFileReader.more()){
 				String word = PTTFileReader.readWord();
 				char[] array = word.toCharArray();
-					if(analyseDotBracket(array))
-						return addDotBracketAnnotation(array);
+				if(analyseDotBracket(array)){
+					PTTFileReader.close();
+					return addDotBracketAnnotation(array);
+				}
 			}
 			PTTFileReader.close();
 		}
 		catch(Exception E){
 			E.printStackTrace();
 		}
-		
+		finally {
+			try{
+				PTTFileReader.close();
+			}catch(Exception e){e.printStackTrace();}
+		}
+
 		System.out.println("Something wrong with extracting the structure");
 		return null;
 	}

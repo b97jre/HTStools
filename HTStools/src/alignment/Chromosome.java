@@ -404,6 +404,8 @@ public class Chromosome implements Serializable{
 		
 	}
 	
+	
+	
 
 	public void print3UTR(int start, int length, boolean plusStrand, String geneName, ExtendedWriter EW){
 		int[] surrSequence = null;

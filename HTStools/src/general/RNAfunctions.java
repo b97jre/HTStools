@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Random;
+
+import Sequence.FastaSequence;
 //import javax.mail.*;
 //import javax.mail.internet.*;
 //import java.util.*;
@@ -121,6 +123,17 @@ public class RNAfunctions
 		}
 		return  C;
 	}
+
+	public static int getGCcontent(int[] A){
+		int GC = 0;
+		for(int i = 0; i < A.length ; i++){
+			if(A[i] == 1)GC++;
+			else if (A[i] == 2)GC++;
+		}
+
+		return  GC;
+	}
+
 
 	public static char[] reverse(char[] A){
 		int Length = A.length;
@@ -295,7 +308,7 @@ public class RNAfunctions
 
 		int nrOfTransitions =   SubstitutionMatrix[2][0] + SubstitutionMatrix[0][2] + SubstitutionMatrix[3][1] + SubstitutionMatrix[1][3];
 		int nrOfTransversions = SubstitutionMatrix[1][0] + SubstitutionMatrix[3][0] + SubstitutionMatrix[0][1] + SubstitutionMatrix[0][3] + 
-		SubstitutionMatrix[2][1] + SubstitutionMatrix[1][2] + SubstitutionMatrix[2][3] + SubstitutionMatrix[3][2];
+				SubstitutionMatrix[2][1] + SubstitutionMatrix[1][2] + SubstitutionMatrix[2][3] + SubstitutionMatrix[3][2];
 
 		double P = (double)nrOfTransitions/(double)totalNrOfCompared;
 		double Q = (double)nrOfTransversions/(double)totalNrOfCompared;
@@ -1120,8 +1133,8 @@ public class RNAfunctions
 		return true;
 	}
 
-	
-	
+
+
 	public static int[] merge5end(int [] Fend, int [] main, int length, int percentErrors, int inside){
 		if(Fend.length > length){
 			boolean found = false;
@@ -1169,16 +1182,13 @@ public class RNAfunctions
 					main = newSeq;
 				}
 			}
-			
+
 		}
 
 		return main;
 	}
-
-	
-	
-	
 	public static int[] merge3end(int [] Tend, int [] main, int length, int percentErrors, int inside){
+
 		if(Tend.length > length){
 			boolean found = false;
 			int errors = percentErrors*length/100;
@@ -1213,8 +1223,6 @@ public class RNAfunctions
 			}
 			if(found){
 				if(main.length -  pos < Tend.length){
-					System.out.print("Extending the sequence with "+ (Tend.length - (main.length -  pos))+ " nt, ");
-					System.out.println( (main.length -  pos) + " nt overlap and "+ error +" errors ("+Tend.length+":"+main.length+")");
 					int[] newSeq = new int[Tend.length+main.length-(main.length- pos)];
 					for(int i = 0; i < pos; i++){
 						newSeq[i] = main[i];
@@ -1222,15 +1230,136 @@ public class RNAfunctions
 					for(int i = 0; i < Tend.length; i++ ){
 						newSeq[pos+i] = Tend[i];
 					}
+
+					System.out.print("Extending the sequence with "+ (Tend.length - (main.length -  pos))+ " nt, ");
+					System.out.println( (main.length -  pos) + " nt overlap and "+ error +" errors ("+Tend.length+":"+main.length+")" );
+					
 					main = newSeq;
+
 				}
 			}
 		}
 
 		return main;
 	}
-	
-	
+
+	public static int[] merge3end(int [] Tend, int [] main, int length, int percentErrors, int inside, ExtendedWriter EW, String Name1, String Name2 ){
+
+		if(Tend.length > length){
+			boolean found = false;
+			int errors = percentErrors*length/100;
+			inside = Math.min(inside, Tend.length -length );
+			inside = Math.min(inside, main.length-length);
+			int pos = main.length - inside-length;
+			int error = 0;
+			while(!found &&  pos+length < main.length ){
+				int foundErrors = 0;
+				int count = 0;
+				while (length-count > 0 && foundErrors <= errors){
+					if(Tend[count] != main[pos+count]){
+						foundErrors++;
+					}
+					count++;
+				}
+				if(foundErrors <= errors){
+					int totalErrors = 0;
+					for(int i = 0; i < main.length-pos;i++){
+						if(Tend[i] != main[pos+i]){
+							totalErrors++;
+						}
+					}
+					if(totalErrors <= (percentErrors*(main.length - pos)/100)){
+						found = true;
+						error = totalErrors;
+					}
+				}
+				if(!found){
+					pos++;
+				}
+			}
+			if(found){
+				if(main.length -  pos < Tend.length){
+					int[] newSeq = new int[Tend.length+main.length-(main.length- pos)];
+					for(int i = 0; i < pos; i++){
+						newSeq[i] = main[i];
+					}
+					for(int i = 0; i < Tend.length; i++ ){
+						newSeq[pos+i] = Tend[i];
+					}
+
+					EW.print((Tend.length - (main.length -  pos))+ "\t"+
+						(main.length -  pos) + " \t"+ error +"\t"+Tend.length+"\t"+main.length+"\t");
+					
+					main = newSeq;
+					EW.println(main.length);
+				}
+			}
+		}
+
+		return main;
+	}
+
+
+
+	public static int[] merge3endIfORF(int [] Tend, int [] main, int length, int percentErrors, int inside){
+		if(Tend.length > length){
+			boolean found = false;
+			int errors = percentErrors*length/100;
+			inside = Math.min(inside, Tend.length -length );
+			inside = Math.min(inside, main.length-length);
+			int pos = main.length - inside-length;
+			int error = 0;
+			while(!found &&  pos+length < main.length ){
+				int foundErrors = 0;
+				int count = 0;
+				while (length-count > 0 && foundErrors <= errors){
+					if(Tend[count] != main[pos+count]){
+						foundErrors++;
+					}
+					count++;
+				}
+				if(foundErrors <= errors){
+					int totalErrors = 0;
+					for(int i = 0; i < main.length-pos;i++){
+						if(Tend[i] != main[pos+i]){
+							totalErrors++;
+						}
+					}
+					if(totalErrors <= (percentErrors*(main.length - pos)/100)){
+						found = true;
+						error = totalErrors;
+					}
+				}
+				if(!found){
+					pos++;
+				}
+			}
+			if(found){
+				if(main.length -  pos < Tend.length){
+					int[] newSeq = new int[Tend.length+main.length-(main.length- pos)];
+					for(int i = 0; i < pos; i++){
+						newSeq[i] = main[i];
+					}
+					for(int i = 0; i < Tend.length; i++ ){
+						newSeq[pos+i] = Tend[i];
+					}
+
+					int newORFlength = FastaSequence.findLongestORFLength(newSeq);
+					int oldORFlength = Math.max(FastaSequence.findLongestORFLength(main), FastaSequence.findLongestORFLength(Tend));
+					if(newORFlength > oldORFlength){
+						System.out.print("Extending the sequence with "+ (Tend.length - (main.length -  pos))+ " nt, ");
+						System.out.println( (main.length -  pos) + " nt overlap and "+ error +" errors ("+Tend.length+":"+main.length+") new ORF ["+oldORFlength+":"+newORFlength+"]" );
+						main = newSeq;
+
+					}
+				}
+			}
+		}
+
+		return main;
+	}
+
+
 
 	public static boolean convert2AlnFile(String Dir,String FileName,String input){
 		int nrOfGenomes = 0;

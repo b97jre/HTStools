@@ -1,7 +1,12 @@
 package alignment;
 
+import general.ExtendedWriter;
+import general.Functions;
+import general.RNAfunctions;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 
 public class CodingGene extends Gene implements Serializable {
@@ -51,8 +56,68 @@ public class CodingGene extends Gene implements Serializable {
 			System.out.println(ID+"\t"+left+"\t"+right+"\t-\t"+description);
 	}
 	
-
+	public void printPremRNA( ExtendedWriter EW, int[] sequence){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printPremRNA(EW,sequence);
+			}
+		}
+	}
 	
+	public void printCodingRNA( ExtendedWriter EW, int[] sequence,String contigName){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printCodingRNA(EW,sequence,contigName);
+			}
+		}
+	}
+
+	public void printmRNA( ExtendedWriter EW, int[] sequence,String contigName){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printmRNA(EW,sequence,contigName);
+			}
+		}
+	}
+	
+	
+	public void printmRNA(ExtendedWriter EW, int[] sequence,String contigName,Hashtable <Integer,StructuralVariation> SVs,String Sample){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printmRNA(EW,sequence,contigName,SVs,Sample);
+			}
+		}
+	}
+	
+	public void printPersonalmRNAInfo( String ContigName,Hashtable <Integer,
+			StructuralVariation> SVs, ArrayList<Integer> SVorder, ArrayList<String> samples,ExtendedWriter info){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printPersonalmRNAInfo(ContigName,SVs,SVorder,samples,info);
+			}
+		}
+		
+	}
+
+	public void printPersonalmRNAInfo( String ContigName,Hashtable <Integer,
+			StructuralVariation> SVs, ArrayList<Integer> SVorder, String sample,ExtendedWriter info){
+		if(this.mRNAs != null){
+ 			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printPersonalmRNAInfo(ContigName,SVs,SVorder,sample,info);
+			}
+		}
+		
+	}
+	
+	
+	public void printPersonalmRNA(ExtendedWriter[] EWs, int[] sequence,String contigName,Hashtable <Integer,StructuralVariation> SVs,ArrayList<Integer> SVorder, String[] samples){
+		if(this.mRNAs != null){
+			for(int i = 0; i < this.mRNAs.size();i++){
+				mRNAs.get(i).printPersonalmRNA(EWs,sequence,contigName,SVs,SVorder,samples);
+			}
+		}
+
+	}
 	
 	public boolean addmRNA(mRNA newmRNA){
 		if(newmRNA.parent.compareTo(ID) == 0){

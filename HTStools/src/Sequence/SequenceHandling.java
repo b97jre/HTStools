@@ -74,6 +74,9 @@ public class SequenceHandling {
 		else if(program.indexOf("size".toUpperCase()) == 0){
 			SequenceHandling.size(T);
 		}
+		else if(program.indexOf("info".toUpperCase()) == 0){
+			SequenceHandling.info(T);
+		}
 		else if(program.indexOf("fixSequenceNames".toUpperCase()) == 0){
 			SequenceHandling.fixSequenceNames(T);
 		}
@@ -406,6 +409,39 @@ public class SequenceHandling {
 			System.out.println("kind has to be either fastq, csfasta or fa");
 		}
 	}
+	
+	public static void info(Hashtable<String,String> T){
+		System.out.println("checking sequences size");
+		String suffix = Functions.getValue(T, "-suffix", "fasta");
+
+		if(suffix.indexOf("fastq") != -1){
+			if(T.containsKey("-f1") && T.containsKey("-f2")){
+				//					String fileName1 = Functions.getValue(T, "-f1", ".");
+				//					String fileName2 = Functions.getValue(T, "-f2", ".");
+				//					FastQSequences.checkPairedFastQSequences(dir, fileName1, fileName2);
+			}
+			else if(T.containsKey("-f1")){
+				//
+			}
+			//
+		}
+		else if(suffix.indexOf("csfasta") != -1){
+			String dir = Functions.getValue(T, "-d", ".");
+			String fileName1 = Functions.getValue(T, "-f1", ".");
+			int max = Integer.parseInt(Functions.getValue(T, "-max", "50"));
+			CfastaSequences.printSizeDistribution(dir, fileName1, max);
+		}
+		else if(suffix.indexOf("fasta") != -1){
+			String fileName1 = Functions.getValue(T, "-i", ".");
+			System.out.println("info is written to "+fileName1+".info");
+			FastaSequences.getInfo(fileName1);
+		}
+		else{
+			System.out.println("kind has to be either fastq, csfasta or fa");
+		}
+	}
+	
+	
 
 
 	public static void extractAbove(Hashtable<String,String> T){
@@ -887,7 +923,7 @@ public class SequenceHandling {
 				B.parseAllFasta(seqFile2,dir);
 				System.out.println("Identifying different transcripts");
 				
-				FastaSequences C = FastaSequences.getUniqueTranscripts(A,B);
+				FastaSequences C = FastaSequences.getUniqueTranscripts(A,B,outFile3+".table");
 				C.printFasta(dir, outFile3);
 			}
 			else{

@@ -18,6 +18,9 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 
 import javax.swing.JFileChooser;
@@ -498,6 +501,55 @@ public abstract class IOTools
 	}
 
 	
+	
+    public static String longestCommonPrefix(ArrayList<String> strs) {
+        String prefix = new String();
+        if(strs.size() > 0)
+            prefix = strs.get(0);
+        for(int i = 1; i < strs.size(); ++i) {
+            String s = strs.get(i);
+            int j = 0;
+            for(; j < Math.min(prefix.length(), s.length()); ++j) {
+                if(prefix.charAt(j) != s.charAt(j)) {
+                    break;
+                }
+            }
+            prefix = prefix.substring(0, j);
+        }
+        return prefix;
+    }
+    
+    
+    
+	public static String removeLastDot(String fileName){
+		String inFileBase = fileName;
+		while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
+			inFileBase = inFileBase.substring(0,inFileBase.length()-1);
+		}
+		return inFileBase;
+	}
+
+	public static String removeFirstDot(String fileName){
+		String inFileBase = fileName;
+		while(inFileBase.indexOf('.') == 0){
+			inFileBase = inFileBase.substring(1);
+		}
+		return inFileBase;
+	}
+
+	
+	
+	
+	public static String getFileBase(String fileName, String suffix){
+		String inFileBase = fileName.substring(0,fileName.lastIndexOf(suffix));
+		while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
+			inFileBase = inFileBase.substring(0,inFileBase.length()-1);
+		}
+		
+		return inFileBase;
+	}
+	
+	
 	public static ArrayList<String> getSequenceFilesFullPath(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -521,6 +573,77 @@ public abstract class IOTools
 
 
 	
+	
+	public static ArrayList<String> getFilesSuffix(String Dir, String suffix){
+		ArrayList<String> SequenceFiles = new ArrayList<String>();
+		File dir = new File(Dir);
+
+		String[] children = dir.list();
+		if (children == null) {
+			return null;
+			// Either dir does not exist or is not a directory
+		} else {
+			for (int i=0; i<children.length; i++) {
+				// Get filename of file or directory
+				String filename = children[i];
+				if(suffix == null)
+					SequenceFiles.add(filename);
+				else if(filename.indexOf(suffix) > -1 && filename.lastIndexOf(suffix) + suffix.length() == filename.length()){
+					SequenceFiles.add(filename);
+				}
+			}
+		}
+		return SequenceFiles;
+	}
+
+
+	public static ArrayList<String> getFilesPrefix(String Dir, String prefix){
+		ArrayList<String> SequenceFiles = new ArrayList<String>();
+		File dir = new File(Dir);
+
+		String[] children = dir.list();
+		if (children == null) {
+			return null;
+			// Either dir does not exist or is not a directory
+		} else {
+			for (int i=0; i<children.length; i++) {
+				// Get filename of file or directory
+				String filename = children[i];
+				if(prefix == null)
+					SequenceFiles.add(filename);
+				else if(filename.indexOf(prefix) == 0 ){
+					SequenceFiles.add(filename);
+				}
+			}
+		}
+		return SequenceFiles;
+	}
+	
+	
+	
+	   public static <T> List<T> union(List<T> list1, List<T> list2) {
+	        Set<T> set = new HashSet<T>();
+
+	        set.addAll(list1);
+	        set.addAll(list2);
+
+	        return new ArrayList<T>(set);
+	    }
+
+	   public static  <T> List<T> intersection(List<T> list1, List<T> list2) {
+	        List<T> list = new ArrayList<T>();
+
+	        for (T t : list1) {
+	            if(list2.contains(t)) {
+	                list.add(t);
+	            }
+	        }
+
+	        return list;
+	    }
+	
+	
+	
 	public static ArrayList<String> getSequenceFiles(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -541,6 +664,9 @@ public abstract class IOTools
 		}
 		return SequenceFiles;
 	}
+
+	
+	
 
 	public static ArrayList<String> getSequenceFilesPrefix(String Dir, String prefix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();

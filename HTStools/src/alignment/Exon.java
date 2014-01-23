@@ -1,31 +1,17 @@
 package alignment;
-import general.Functions;
-import general.ExtendedReader;
+
 import general.ExtendedWriter;
 
-import general.IOTools;
-import general.RNAfunctions;
-import general.energy;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 
 
-public class Exon extends Object implements Comparable<Exon>{
+
+public class Exon extends Gene implements Comparable<Exon>{
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public int left;
-	public int right;
 	protected String parent;
 	protected String dir;
 	protected String name;
@@ -37,6 +23,22 @@ public class Exon extends Object implements Comparable<Exon>{
 		this.right = right;
 		this.parent = parent;
 	}
+
+	Exon(int left, int right,String parent,String Name){
+		this.left = left;
+		this.right = right;
+		this.parent = parent;
+	}
+	
+	Exon(int left, int right,String parent,String Name,  String dir, String kind){
+		this.left = left;
+		this.right = right;
+		this.parent = parent;
+		this.name = Name;
+		this.dir = dir;
+		this.kind = kind;
+	}
+	
 
 
 	Exon(String[] bedInfo){
@@ -74,6 +76,77 @@ public class Exon extends Object implements Comparable<Exon>{
 		return true;
 	}
 
+	public boolean overlaps(Exon otherExon){
+
+		if(this.left > otherExon.right || this.right < otherExon.left) {
+			return false;
+		}return true;
+	}
+	
+	
+	
+	public ArrayList<Exon> split(Exon otherExon){
+		
+		if(this.left > otherExon.right || this.right < otherExon.left) {
+			System.out.println("this should not happen 2");
+			return null;
+		}
+		ArrayList<Exon> newExons = new ArrayList<Exon>();
+		if(this.left > otherExon.left && this.right > otherExon.right){
+			int newLeft = this.left;
+			int newRight = otherExon.right;
+			otherExon.right = newLeft-1;
+			this.left = newRight+1;
+			Exon newExon = new Exon(newLeft,newRight, this.parent+"_overlap_"+otherExon.parent, this.name+"_overlap_"+otherExon.name, this.dir+"_overlap_"+otherExon.dir, this.kind+"_overlap_"+otherExon.kind);
+			newExons.add(this);
+			newExons.add(newExon);
+			newExons.add(otherExon);
+		} 
+		else if(this.left > otherExon.left &&this.right < otherExon.right){
+			int newLeft = this.left;
+			int newRight = this.right;
+			Exon newExon = new Exon(otherExon.left,newLeft-1,otherExon.parent, otherExon.name+"_left",otherExon.dir, otherExon.kind);
+			Exon newExon2 = new Exon(newLeft,newRight, this.parent+"_overlap_"+otherExon.parent, this.name+"_overlap_"+otherExon.name, this.dir+"_overlap_"+otherExon.dir, this.kind+"_overlap_"+otherExon.kind);
+			Exon newExon3 = new Exon(newRight+1,otherExon.right,otherExon.name+"_right", otherExon.name+"_right",otherExon.dir, otherExon.kind);
+			newExons.add(newExon);
+			newExons.add(newExon2);
+			newExons.add(newExon3);
+		}
+		else if(this.left < otherExon.left && this.right < otherExon.right){
+			Exon newExon = new Exon(this.left,otherExon.left-1,this.parent, this.name,this.dir,this.kind);
+			Exon newExon2 = new Exon(otherExon.left,this.right, this.parent+"_overlap_"+otherExon.parent, this.name+"_overlap_"+otherExon.name, this.dir+"_overlap_"+otherExon.dir, this.kind+"_overlap_"+otherExon.kind);
+			Exon newExon3 = new Exon(this.right+1,otherExon.right,otherExon.parent, otherExon.name,otherExon.dir,otherExon.kind);
+			newExons.add(newExon);
+			newExons.add(newExon2);
+			newExons.add(newExon3);
+		}else if(this.left < otherExon.left && this.right > otherExon.right){
+			int newLeft = otherExon.left;
+			int newRight = otherExon.right;
+			Exon newExon = new Exon(this.left,newLeft-1,this.parent, this.name+"_left",this.dir, this.kind);
+			Exon newExon2 = new Exon(newLeft,newRight,this.parent+"_overlap_"+otherExon.parent, this.name+"_overlap_"+otherExon.name, this.dir+"_overlap_"+otherExon.dir, this.kind+"_overlap_"+otherExon.kind);
+			Exon newExon3 = new Exon(newRight+1,this.right,this.parent, this.name+"_right",this.dir, this.kind);
+			newExons.add(newExon);
+			newExons.add(newExon2);
+			newExons.add(newExon3);
+		}else if(this.left == otherExon.left && this.right > otherExon.right){
+			newExons.add(this);
+		}else if(this.left == otherExon.left && this.right <= otherExon.right){
+			newExons.add(otherExon);
+		}
+		else if(this.left < otherExon.left && this.right == otherExon.right){
+			newExons.add(this);
+		}else if(this.left >= otherExon.left && this.right == otherExon.right){
+			newExons.add(otherExon);
+		}
+		else{
+			System.out.println("this should not happen");
+			return null;
+		}
+		
+		//System.out.println(this.right);
+		return newExons;
+	}
+		
 	public int compareTo(Exon n) {
 		int lastCmp = left-n.left;
 		return (lastCmp != 0 ? lastCmp : right- n.right);
@@ -83,4 +156,9 @@ public class Exon extends Object implements Comparable<Exon>{
 		System.out.println(chrom+"\t"+this.left+"\t"+this.right+"\t"+this.name+"\t.\t"+this.dir+"\t.\t"+this.kind+"\t.\t"+this.parent);
 	}
 
+	public void printBED(String chrom, ExtendedWriter EW){
+		EW.println(chrom+"\t"+this.left+"\t"+this.right+"\t"+this.name+"\t.\t"+this.dir+"\t.\t"+this.kind+"\t.\t"+this.parent);
+	}
+	
+	
 }

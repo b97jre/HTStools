@@ -8,12 +8,8 @@ import java.io.FileWriter;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import Blast.Main;
-import Sequence.FastQSequences;
+import Blast.Blast;
 import Sequence.FastaSequences;
-import Sequence.Generate;
-import Sequence.SequenceHandling;
-import alignment.Databases;
 import alignment.Gene;
 
 public class Ontology {
@@ -41,7 +37,7 @@ public class Ontology {
 		Ontology O = new Ontology();
 		O.getFastaNames(dir, fastaFile);
 		if(T.containsKey("-blastFile")){
-			O.Genes = Main.parseBlastFile(dir, Functions.getValue(T, "-blastFile"), O.Genes);
+			O.Genes = Blast.parseBlastFile(dir, Functions.getValue(T, "-blastFile"), O.Genes);
 
 		}
 		if(program.indexOf("PANTHER") != -1){
