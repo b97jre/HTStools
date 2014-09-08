@@ -155,6 +155,7 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			}
 
 		}
+			
 	}
 
 
@@ -414,6 +415,53 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 		}catch(Exception E){E.printStackTrace();}
 	}
 
+	
+	
+	
+	
+	
+	
+	public static void extractSoftClip(String inFile){
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader(inFile));
+			while(ER.more()){
+				if((char)ER.lookAhead() == '@'){
+					ER.skipLine();
+				}
+				else{
+					String Samline = ER.readLine();
+					String[] info = Samline.split("\t");
+					if(info[5].indexOf('S')>-1 && info[5].indexOf('M')>-1 && info[5].length()==6){
+						int start = 0; int stop = info[9].length();
+						if(info[5].indexOf('S') < info[5].indexOf('M')){
+							stop = Integer.parseInt(info[5].substring(0,info[5].indexOf('S')));
+						}else{
+							start = Integer.parseInt(info[5].substring(0,info[5].indexOf('M')));
+							stop = start+ Integer.parseInt(info[5].substring(info[5].indexOf('M')+1,info[5].indexOf('S')));
+						}
+						//System.out.println(">"+info[0]+"_softClipped");
+						if(Integer.parseInt(info[1]) == 16){
+							String softClipped = info[9].substring(start,stop);
+							softClipped = RNAfunctions.RNA2DNA(RNAfunctions.getReverseComplement(softClipped));
+							if(softClipped.length() > 20)
+								System.out.println(softClipped.substring(0,20));
+						}
+						else{
+							String softClipped = info[9].substring(start,stop);
+							if(softClipped.length() > 20)
+								System.out.println(softClipped.substring(0,20));
+						}
+						
+					}
+					
+				}
+			}
+			ER.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+	
+	
+	
 	public void parsePairs(String inFile, Hashtable<String,String> flags,Hashtable<String,Integer> sizes){
 		try{
 			System.out.println("inFile");
@@ -627,10 +675,14 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 			//trinitySpecific
 			String[] hitInfo = info[2].split("_");
 			String hitName1 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2];
+			if(hitInfo.length == 4)
+				hitName1 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2]+"_"+hitInfo[3];
 			String contig = hitInfo[0];
 			hitInfo = info[6].split("_");
 			if(hitInfo.length > 2){
 				String hitName2 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2];
+				if(hitInfo.length == 4)
+					hitName2 = hitInfo[0]+"_"+hitInfo[1]+"_"+hitInfo[2]+"_"+hitInfo[3];
 				int tag = Integer.parseInt(info[1]);
 				if(hitName1.compareTo(hitName2) != 0 ){
 					if((tag == 97) &&  leftPos+inside > sizes.get(hitName1).intValue() && rightPos < inside)
@@ -650,12 +702,21 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 	}
 
 	private void addPair(String hitName1, String end1, String hitName2, String end2, int code){
-		if(this.pairs.containsKey(hitName1+"_"+hitName2+"_"+end1+"_"+end2))
+		try{
+			if(this.pairs.containsKey(hitName1+"_"+hitName2+"_"+end1+"_"+end2))
 			this.pairs.get(hitName1+"_"+hitName2+"_"+end1+"_"+end2).addHit();
 		else{
 			Pair newPair = new Pair(this.get(hitName1),end1,this.get(hitName2),end2,code);
 			//System.out.println(hitName1+"_"+hitName2+"_"+end1+"_"+end2);
 			this.pairs.put(hitName1+"_"+hitName2+"_"+end1+"_"+end2, newPair);
+		}
+		}catch(Exception E){
+			E.printStackTrace();
+			System.out.println(hitName1);
+			System.out.println(end1);
+			System.out.println(hitName2);
+			System.out.println(end2);
+			
 		}
 	}
 
@@ -747,14 +808,15 @@ public class SamSequences extends Hashtable <String,FastaSequences> implements S
 
 	private void getSizes(ExtendedReader EW, Hashtable<String,Integer> HT){
 		//trinitySpecific
+
 		while(EW.more()){
 			String infoLine = EW.readLine();
-			//System.out.println(infoLine);
 			String[] info = infoLine.split("\\ ");
 			String[] hitInfo = info[0].split("_");
 			//			int length = Integer.parseInt(info[1].split("=")[1]);
-
 			String hitName = hitInfo[0].substring(1)+"_"+hitInfo[1]+"_"+hitInfo[2];
+			if(hitInfo.length == 4)
+				hitName = hitInfo[0].substring(1)+"_"+hitInfo[1]+"_"+hitInfo[2]+"_"+hitInfo[3];
 			String Sequence = EW.readLine();
 			//			if(Sequence.length() == length)
 			HT.put(hitName, new Integer(Sequence.length()));

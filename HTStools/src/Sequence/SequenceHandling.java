@@ -32,6 +32,9 @@ public class SequenceHandling {
 		if(program.indexOf("UNIQUE") == 0){
 			SequenceHandling.getOtherSequences(T);
 		}
+		else if(program.indexOf("GETEXTENSIONS") == 0){
+			SequenceHandling.getExtension(T);
+		}
 		else if(program.indexOf("MERGE") == 0){
 			SequenceHandling.MergeSequences(T);
 		}
@@ -44,6 +47,9 @@ public class SequenceHandling {
 		else if(program.indexOf("INTERACTION") == 0){
 		}
 		else if(program.indexOf("LENGTH") == 0){
+			SequenceHandling.extractAbove(T);
+		}
+		else if(program.indexOf("EXTRACTABOVE") == 0){
 			SequenceHandling.extractAbove(T);
 		}
 		else if(program.indexOf("EXACT") == 0){
@@ -145,10 +151,19 @@ public class SequenceHandling {
 			SequenceHandling.findDifferent(T);
 		}
 
+		else if(program.indexOf("SoftClip".toUpperCase()) != -1){
+			String inFile = Functions.getValue(T, "-i");
+
+			SamSequences.extractSoftClip(inFile);
+		}
+	
+		
 		if(T.containsKey("-extra"))
 			FastaSequences.run(T);
 		if(T.containsKey("-subset"))
 			FastaSequences.run(T);
+		
+		
 	}
 
 	public static FastaSequences getOtherSequences(Hashtable<String,String> T){
@@ -169,6 +184,19 @@ public class SequenceHandling {
 		return Unique;
 	}
 
+	
+	public static void getExtension(Hashtable<String,String> T){
+		String dir = Functions.getValue(T, "-d", IOTools.getCurrentPath());
+		String fastaFile1 = Functions.getValue(T, "-before", "file1.fa");
+		String fastaFile2 = Functions.getValue(T, "-after", "file2.fa");
+		String outFile = Functions.getValue(T, "-o", fastaFile1+"_"+fastaFile2+".extensions.fa");
+
+		FastaSequences FS1 = new FastaSequences(dir, fastaFile1);
+		FastaSequences FS2 = new FastaSequences(dir, fastaFile2);
+		FastaSequences.getExtension(FS1, FS2, outFile);
+	}
+	
+	
 	public static void removePrimers(Hashtable<String,String> T){
 		boolean allRequired = true;
 		String dir, outDir, SequenceFile, primerFile, suffix;
@@ -402,7 +430,7 @@ public class SequenceHandling {
 		}
 		else if(suffix.indexOf("fasta") != -1){
 			String fileName1 = Functions.getValue(T, "-i", ".");
-			System.out.println("Size is written to "+fileName1);
+			System.out.println("Size is written to "+fileName1+".size");
 			FastaSequences.getLength(fileName1);
 		}
 		else{
@@ -435,6 +463,7 @@ public class SequenceHandling {
 			String fileName1 = Functions.getValue(T, "-i", ".");
 			System.out.println("info is written to "+fileName1+".info");
 			FastaSequences.getInfo(fileName1);
+			
 		}
 		else{
 			System.out.println("kind has to be either fastq, csfasta or fa");
@@ -466,7 +495,7 @@ public class SequenceHandling {
 			int max = Integer.parseInt(Functions.getValue(T, "-max", "50"));
 			CfastaSequences.printSizeDistribution(dir, fileName1, max);
 		}
-		else if(suffix.indexOf("fasta") != -1){
+		else if(suffix.indexOf("fa") != -1){
 			String inFile = Functions.getValue(T, "-i", ".");
 			String outFile = Functions.getValue(T, "-o", inFile.substring(0,inFile.lastIndexOf("fa"))+length+".fa");
 			String WD = Functions.getValue(T, "-d", IOTools.getCurrentPath());
@@ -502,16 +531,17 @@ public class SequenceHandling {
 			int size = Integer.parseInt(Functions.getValue(T, "-max", "50"));
 			CfastaSequences.printSizeDistribution(dir, fileName1, size);
 		}
-		else if(suffix.indexOf("fasta") != -1){
+		else if(suffix.indexOf("fa") != -1){
 			String inFile = Functions.getValue(T, "-i", ".");
-			String outFile = Functions.getValue(T, "-o", inFile.substring(0,inFile.lastIndexOf("fa"))+length+".fa");
+			String outFile = Functions.getValue(T, "-o", inFile.substring(0,inFile.lastIndexOf(suffix))+length+"."+suffix);
 			String WD = Functions.getValue(T, "-d", IOTools.getCurrentPath());
 			
-			System.out.println("Extrackting sequence longer than "+length+" that is written to "+outFile);
+			System.out.println("Extracting sequences longer than "+length+" that is written to "+outFile);
 			FastaSequences.extractSeqAboveLength(inFile,outFile,WD,length);
 		}
 		else{
 			System.out.println("kind has to be either fastq, csfasta or fa");
+			System.out.println(suffix);
 		}
 	}
 	

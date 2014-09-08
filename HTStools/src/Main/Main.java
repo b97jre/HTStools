@@ -41,12 +41,8 @@ public class Main {
 //			System.out.println("databases");
 //			Databases.run(T);
 			System.out.println("sequencehandling");
-			SequenceHandling.run(T);
+			//SequenceHandling.run(T);
 			System.out.println("sbatch");
-			SBATCHinfo sbatch =  new SBATCHinfo();
-			sbatch.run(T);
-			System.out.println("Infernal");
-			sbatch.run(T);
 			
 		}
 
@@ -65,6 +61,12 @@ public class Main {
 			System.out.println("SequenceHandling");
 			SequenceHandling.run(T);
 		}
+		if(program.indexOf("tableParsing".toUpperCase()) == 0){
+			System.out.println("SequenceHandling");
+			SequenceHandling.run(T);
+		}
+
+		
 		
 		if(program.indexOf("sbatch".toUpperCase()) == 0){
 			SBATCHinfo sbatch =  new SBATCHinfo();

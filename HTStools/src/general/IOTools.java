@@ -49,6 +49,8 @@ public abstract class IOTools
 		return ".";
 	}
 
+	
+	
 	public static int countLines(String filename) throws IOException {
 		System.out.println("starting reading sequences in "+filename);
 		long startTime = System.nanoTime();
@@ -500,27 +502,60 @@ public abstract class IOTools
 		return SequenceFiles;
 	}
 
+
+
+	public static String longestCommonPrefix(ArrayList<String> strs) {
+		String prefix = new String();
+		if(strs.size() > 0)
+			prefix = strs.get(0);
+		for(int i = 1; i < strs.size(); ++i) {
+			String s = strs.get(i);
+			int j = 0;
+			for(; j < Math.min(prefix.length(), s.length()); ++j) {
+				if(prefix.charAt(j) != s.charAt(j)) {
+					break;
+				}
+			}
+			prefix = prefix.substring(0, j);
+		}
+		return prefix;
+	}
+
+	public static String longestCommonPrefix(String A, String B) {
+		String prefix = A;
+		int j = 0;   
+		for(; j < Math.min(prefix.length(), B.length()); ++j) {
+			if(prefix.charAt(j) != B.charAt(j)) {
+				break;
+			}
+		}
+		prefix = prefix.substring(0, j);
+		return prefix;
+	}
 	
+	public static String longestCommonSuffix(String A, String B) {
+		String suffix = A;
+		int pointer = A.length()-1;
+		int pointer2 = B.length()-1;
+		int j = 0;
+		for(; j < Math.min(suffix.length(), B.length()); ++j) {
+			if(suffix.charAt(pointer-j) != B.charAt(pointer2-j)) {
+				break;
+			}
+		}
+		suffix = suffix.substring(pointer-j+1);
+		return suffix;
+	}
 	
-    public static String longestCommonPrefix(ArrayList<String> strs) {
-        String prefix = new String();
-        if(strs.size() > 0)
-            prefix = strs.get(0);
-        for(int i = 1; i < strs.size(); ++i) {
-            String s = strs.get(i);
-            int j = 0;
-            for(; j < Math.min(prefix.length(), s.length()); ++j) {
-                if(prefix.charAt(j) != s.charAt(j)) {
-                    break;
-                }
-            }
-            prefix = prefix.substring(0, j);
-        }
-        return prefix;
-    }
-    
-    
-    
+	public static String longestCommonSuffix(ArrayList<String> strs) {
+		String suffix = strs.get(0);
+		for(int j = 1; j < strs.size(); ++j) {
+			suffix = longestCommonSuffix(suffix,strs.get(j));
+		}
+		return suffix;
+	}
+
+
 	public static String removeLastDot(String fileName){
 		String inFileBase = fileName;
 		while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
@@ -537,19 +572,28 @@ public abstract class IOTools
 		return inFileBase;
 	}
 
-	
-	
-	
+
+
+
 	public static String getFileBase(String fileName, String suffix){
-		String inFileBase = fileName.substring(0,fileName.lastIndexOf(suffix));
-		while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
-			inFileBase = inFileBase.substring(0,inFileBase.length()-1);
+		if(suffix != null){
+			String inFileBase = fileName.substring(0,fileName.lastIndexOf(suffix));
+			while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
+				inFileBase = inFileBase.substring(0,inFileBase.length()-1);
+			}	
+			return inFileBase;
+		}else{
+			String inFileBase = fileName.substring(0,fileName.lastIndexOf('.'));
+			while(inFileBase.lastIndexOf('.') == inFileBase.length()-1){
+				inFileBase = inFileBase.substring(0,inFileBase.length()-1);
+			}	
+			return inFileBase;
 		}
-		
-		return inFileBase;
 	}
 	
 	
+
+
 	public static ArrayList<String> getSequenceFilesFullPath(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -572,8 +616,8 @@ public abstract class IOTools
 	}
 
 
-	
-	
+
+
 	public static ArrayList<String> getFilesSuffix(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -618,32 +662,32 @@ public abstract class IOTools
 		}
 		return SequenceFiles;
 	}
-	
-	
-	
-	   public static <T> List<T> union(List<T> list1, List<T> list2) {
-	        Set<T> set = new HashSet<T>();
 
-	        set.addAll(list1);
-	        set.addAll(list2);
 
-	        return new ArrayList<T>(set);
-	    }
 
-	   public static  <T> List<T> intersection(List<T> list1, List<T> list2) {
-	        List<T> list = new ArrayList<T>();
+	public static <T> List<T> union(List<T> list1, List<T> list2) {
+		Set<T> set = new HashSet<T>();
 
-	        for (T t : list1) {
-	            if(list2.contains(t)) {
-	                list.add(t);
-	            }
-	        }
+		set.addAll(list1);
+		set.addAll(list2);
 
-	        return list;
-	    }
-	
-	
-	
+		return new ArrayList<T>(set);
+	}
+
+	public static  <T> List<T> intersection(List<T> list1, List<T> list2) {
+		List<T> list = new ArrayList<T>();
+
+		for (T t : list1) {
+			if(list2.contains(t)) {
+				list.add(t);
+			}
+		}
+
+		return list;
+	}
+
+
+
 	public static ArrayList<String> getSequenceFiles(String Dir, String suffix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
 		File dir = new File(Dir);
@@ -665,8 +709,8 @@ public abstract class IOTools
 		return SequenceFiles;
 	}
 
-	
-	
+
+
 
 	public static ArrayList<String> getSequenceFilesPrefix(String Dir, String prefix){
 		ArrayList<String> SequenceFiles = new ArrayList<String>();
@@ -688,9 +732,9 @@ public abstract class IOTools
 		}
 		return SequenceFiles;
 	}
-	
-	
-	
+
+
+
 	public static ArrayList <String[]> findPairs(ArrayList <String> fileNames,  String [] sep){
 
 		ArrayList <String[]> pairs = new ArrayList <String[]>();

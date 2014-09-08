@@ -304,11 +304,14 @@ public class Database implements Serializable{
 				pointer++;
 			}
 		}
+
+
 		int[] sequence2 = new int[pointer];
 		this.length = pointer;
 		for(int i = 0; i < pointer; i++){
 			sequence2[i] = sequence[i];
 		}
+
 		this.sequence = sequence2;
 	}
 
@@ -368,7 +371,20 @@ public class Database implements Serializable{
 
 	}
 
-	public void compareVCFinfo(Database otherDatabase, String sample, ExtendedWriter EW){
+	public void markSubset(String[] VCFinfo){
+		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+		Integer Location = Integer.decode(VCFinfo[1]);
+		if(this.SVs.containsKey(Location)){
+			this.SVs.get(Location).SkellyPrint = true;
+		}
+
+	}
+
+
+	public void comparePhasedVCFinfo(Database otherDatabase, String sample, ExtendedWriter EW){
 		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
 		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
 		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
@@ -391,26 +407,27 @@ public class Database implements Serializable{
 					StructuralVariationSample SV2 = otherDatabase.SVs.get(sortedKeys.get(i)).getSample(sample);
 
 					if(!SV1.isHomozygous()){
-						nrOfSNPs++;
-						if(SV1.isSame(SV2)){
-							nrOfIdentical++;
-						}
 						if(SV1.phaseNr != currentPhase){
 							int stop = sortedKeys.get(i-1);
-			
+
 							if(nrOfSNPs != 1){
 								if(nrOfIdentical*2 < nrOfSNPs){
 									nrOfIdentical = nrOfSNPs - nrOfIdentical;
 								}
 								EW.println(this.Name+"\t"+currentPhase+"\t"+start+"\t"+stop+"\t"+nrOfSNPs+"\t"+nrOfIdentical);
 							}
-							start = sortedKeys.get(i-1);
-							currentPhase++;
+							start = sortedKeys.get(i);
+							currentPhase=SV1.phaseNr;
 							nrOfSNPs = 1; 
 							nrOfIdentical = 0;
 							if(SV1.isSame(SV2)){
 								nrOfIdentical++;
 							}
+						}
+					}else{
+						nrOfSNPs++;
+						if(SV1.isSame(SV2)){
+							nrOfIdentical++;
 						}
 					}
 				}
@@ -418,6 +435,66 @@ public class Database implements Serializable{
 		}
 	}
 
+
+	public void trimPhasedVCFinfo(Database otherDatabase, String sample){
+		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+		if(this.SVs!=null && otherDatabase.SVs != null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(this.SVs.keySet());
+			Collections.sort(sortedKeys);
+			int currentPhase = SVs.get(sortedKeys.get(0)).getPhase(sample);
+			for(int i = 0; i < sortedKeys.size();i++){
+				if(otherDatabase.SVs.containsKey(sortedKeys.get(i))){
+					if(SVs.get(sortedKeys.get(i)).getPhase(sample) != currentPhase){
+						if(SVs.get(sortedKeys.get(i)).isPhased(sample)){
+							System.out.println("Unphasing "+this.Name +"\t"+sortedKeys.get(i));
+						}
+						SVs.get(sortedKeys.get(i)).unPhase(sample);
+						currentPhase = SVs.get(sortedKeys.get(i)).getPhase(sample);
+					}
+				}else{
+					System.out.println("removing "+this.Name +"\t"+sortedKeys.get(i));
+					SVs.remove(sortedKeys.get(i));
+				}
+			}
+		}else if(this.SVs!=null){
+			this.SVs =null;
+		}
+
+	}
+
+
+	public void compareVCFinfo(Database otherDatabase,ArrayList<String> samples, ExtendedWriter EW1,ExtendedWriter EW2){
+		//		0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
+		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
+		// scaffold_1      5       .       A       	      56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
+
+
+		if(this.SVs!=null && otherDatabase.SVs != null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(this.SVs.keySet());
+			Collections.sort(sortedKeys);
+			List<Integer> OtherSortedKeys=new ArrayList<Integer>(otherDatabase.SVs.keySet());
+			Collections.sort(OtherSortedKeys);
+
+			for(int i = 0; i < sortedKeys.size();i++){
+				if(!otherDatabase.SVs.containsKey(sortedKeys.get(i))){
+					EW1.print(this.Name+"\t"+sortedKeys.get(i)+"\t");
+					SVs.get(sortedKeys.get(i)).printSamples(EW1,samples);
+					EW1.println();
+				}
+			}
+			for(int i = 0; i < OtherSortedKeys.size();i++){
+				if(!this.SVs.containsKey(OtherSortedKeys.get(i))){
+					EW2.print(otherDatabase.Name+"\t"+OtherSortedKeys.get(i)+"\t");
+					otherDatabase.SVs.get(OtherSortedKeys.get(i)).printSamples(EW2,samples);
+					EW2.println();
+				}
+			}
+
+		}
+	}
 
 
 
@@ -669,6 +746,84 @@ public class Database implements Serializable{
 	//			}
 	//	}
 
+	public void printHaploContig(ExtendedWriter EW,String sample,boolean father,ExtendedWriter SNPinformation ){
+		String newName = this.Name+"_"+sample+"_phased_";
+		if(father) newName+="father.fa";
+		else newName+= "mother.fa";
+		List<Integer> sortedKeys = null;
+		if(SVs != null){
+			sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+		}
+		EW.println(">"+newName);
+		System.out.println(">"+newName);
+		int newLine = 100;
+		int pointer = 0;
+		for(int i= 0; i < this.length;i++){
+			if(i == newLine){
+				newLine = newLine+100;
+				EW.println();
+			}
+			if(sortedKeys != null && pointer < sortedKeys.size() && sortedKeys.get(pointer) == i+1){
+				char[] SNP = this.SVs.get(sortedKeys.get(pointer)).getPhasedSNP(EW, sample,father);
+				for(int j = 0; j < SNP.length; j++){
+					EW.print(SNP[j]);
+				}
+				SNPinformation.print((i+1)+"\t"+RNAfunctions.DNAInt2char(this.sequence[i])+"\t");
+				for(int j = 0; j < SNP.length; j++){
+					SNPinformation.print(SNP[j]);
+				}
+				SNPinformation.println();
+				pointer++;
+			}
+			else
+				EW.print(RNAfunctions.DNAInt2char(this.sequence[i]));
+		}
+	}
+	public void printVCFinfo(ExtendedWriter EW,String sample){
+		int[] vcfInfo = new int[5];
+		List<Integer> sortedKeys = null;
+		if(SVs != null){
+			sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++){
+				vcfInfo = SVs.get(sortedKeys.get(i)).getSampleVCFinfo(vcfInfo,sample);
+			}
+		}
+		
+		EW.println(this.Name+"\t"+vcfInfo[0]+"\t"+vcfInfo[1]+"\t"+vcfInfo[2]+
+				"\t"+vcfInfo[3]+"\t"+vcfInfo[4]+"\t"+sample);
+
+	}
+
+
+
+	public void printNNContig(ExtendedWriter EW,String sample){
+		List<Integer> sortedKeys = null;
+		if(SVs != null){
+			sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+		}
+		EW.println(">"+this.Name);
+		int newLine = 100;
+		int pointer = 0;
+		for(int i= 0; i < this.length;i++){
+			if(i == newLine){
+				newLine = newLine+100;
+				EW.println();
+			}
+			if(sortedKeys != null &&pointer < sortedKeys.size() && sortedKeys.get(pointer) == i+1){
+				char[] SNP = this.SVs.get(sortedKeys.get(pointer)).getNNSNP(EW, sample);
+				for(int j = 0; j < SNP.length; j++){
+					EW.print(SNP[j]);
+				}
+			}else
+				EW.print(RNAfunctions.DNAInt2char(this.sequence[i]));
+		}
+
+	}
+
+
 	public void printmRNAs(ExtendedWriter EW){
 		List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
 		Collections.sort(sortedKeys);
@@ -684,9 +839,11 @@ public class Database implements Serializable{
 		if(this.codingGenes != null)
 			for(int i = 0; i< this.codingGenes.size();i++){
 				codingGenes.get(i).printPersonalmRNA(EWs,this.sequence,this.Name,this.SVs,sortedKeys,Samples);
-
 			}
 	}
+
+
+
 
 	public void printPersonalmRNAsInfo(ArrayList<String> Samples, ExtendedWriter Info){
 		if(this.SVs != null){
@@ -821,8 +978,10 @@ public class Database implements Serializable{
 				if(sortedKeys.get(i) > this.filters.get(this.filters.size()-1).right) 
 					return;
 				else if(sortedKeys.get(i) >= this.filters.get(pointer).left && sortedKeys.get(i) <= this.filters.get(pointer).right){
-					if(SVs.get(sortedKeys.get(i)).isHeterozygous(sample))
-						EW.println(this.filters.get(pointer).name+"\t"+this.Name+"_"+sortedKeys.get(i)+"\t"+SVs.get(sortedKeys.get(i)).getMotherCount(sample)+"\t"+SVs.get(sortedKeys.get(i)).getFatherCount(sample));
+					if(SVs.get(sortedKeys.get(i)).isHeterozygous(sample) && SVs.get(sortedKeys.get(i)).isPhased(sample))
+						EW.println(this.filters.get(pointer).name+"_"+SVs.get(sortedKeys.get(i)).getPhase(sample)+"\t"+this.Name+"_"+sortedKeys.get(i)
+								+"\t"+SVs.get(sortedKeys.get(i)).getMotherCount(sample)
+								+"\t"+SVs.get(sortedKeys.get(i)).getFatherCount(sample));
 				}
 				else if(sortedKeys.get(i) > this.filters.get(pointer).right){
 					i--;
@@ -916,6 +1075,52 @@ public class Database implements Serializable{
 		}
 	}
 
+	
+	
+	public void removeCounts(String sample){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				SVs.get(sortedKeys.get(i)).removeCounts(sample);
+			}
+		}
+		
+	}
+
+	public void addCounts(Integer location, String sample, int count, boolean mother){
+		if(SVs.containsKey(location))
+				SVs.get(location).addCounts(sample,count,mother);
+	}
+	
+	
+	
+	public void parseMpileUpFile(ExtendedReader ER,String sample, String sep, String parent){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++){
+				
+				
+			}
+		}
+	}
+	
+	
+	public void printVCFinfoSamples(ArrayList<String> samples,ExtendedWriter EW,String extraInfo){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				EW.print(this.Name+extraInfo+"\t"+sortedKeys.get(i)+"\t");
+				SVs.get(sortedKeys.get(i)).printSamples(EW, samples);
+				EW.println();
+			}
+		}
+	}
+
 	public void printVCFHetinfoSamples(String sample,ExtendedWriter EW){
 		if(SVs!=null){
 			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
@@ -931,9 +1136,23 @@ public class Database implements Serializable{
 		}
 	}
 
-	
-	
-	
+	public void printVCFHetinfoSamplesSpecial(String sample,ExtendedWriter EW,String extraInfo){
+		if(SVs!=null){
+			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());
+			Collections.sort(sortedKeys);
+			for(int i = 0; i < sortedKeys.size();i++)
+			{
+				if(!SVs.get(sortedKeys.get(i)).getSample(sample).isHomozygous()){
+					EW.print(this.Name+extraInfo+"\t"+sortedKeys.get(i)+"\t");
+					SVs.get(sortedKeys.get(i)).printSample(EW, sample);
+					EW.println();
+				}
+			}
+		}
+	}
+
+
+
 	public void printVCFinfoSamplesRfriendly(ArrayList<String> samples,ExtendedWriter EW){
 		if(SVs!=null){
 			List<Integer> sortedKeys=new ArrayList<Integer>(SVs.keySet());

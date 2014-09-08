@@ -66,7 +66,7 @@ public class FastaSequence extends Object implements Serializable {
 		else return "FULL";
 	}
 	
-	public void findLongestORF(double cutoff,ExtendedWriter info,ExtendedWriter ORFs,ExtendedWriter F2PSeq, ExtendedWriter proteinSeq,GeneticCode GC){
+	public void findLongestORF(double cutoff,ExtendedWriter info,ExtendedWriter ORFs,ExtendedWriter F2PSeq, ExtendedWriter proteinSeq,ExtendedWriter bestSet,GeneticCode GC){
 		int[][] allInfo =  findLongestORFinfo();
 		
 		info.println(this.Name+"\t"+allInfo[0][3]+"\t"+allInfo[1].length+"\t"+this.Sequence.length+"\t"+allInfo[0][0]+"\t"+allInfo[0][1]+"\t"+getKind(allInfo[0][2])+"\t"+RNAfunctions.getGCcontent(this.Sequence));
@@ -80,11 +80,21 @@ public class FastaSequence extends Object implements Serializable {
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][0], this.Sequence));
 			else
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][4], this.Sequence));
+			if(this.Sequence.length > 1000 && allInfo[1].length > 600 && (double)allInfo[1].length/(double)this.Sequence.length > 0.3){
+				bestSet.println(this.Name);
+				bestSet.println(RNAfunctions.RNAInt2String(this.Sequence));
+			}
+			
 		}
 		else if(allInfo[0][3]==-1){
 			F2PSeq.println(this.Name);
 			int[] seq = RNAfunctions.getReverseComplement(this.Sequence);
 			F2PSeq.println(RNAfunctions.RNAInt2String(seq));
+			if(this.Sequence.length > 1000 && allInfo[1].length > 600 && (double)allInfo[1].length/(double)this.Sequence.length > 0.3){
+				bestSet.println(this.Name);
+				bestSet.println(RNAfunctions.RNAInt2String(seq));
+			}
+			
 			proteinSeq.println(this.Name);
 			if(allInfo[0][0] != 0)
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][0], seq));
@@ -94,6 +104,10 @@ public class FastaSequence extends Object implements Serializable {
 		else{
 			F2PSeq.println(this.Name+"_forward");
 			F2PSeq.println(RNAfunctions.RNAInt2String(this.Sequence));
+			if(this.Sequence.length > 1000 && allInfo[1].length > 600 && (double)allInfo[1].length/(double)this.Sequence.length > 0.3){
+				bestSet.println(this.Name);
+				bestSet.println(RNAfunctions.RNAInt2String(this.Sequence));
+			}
 			proteinSeq.println(this.Name+"_forward");
 			if(allInfo[0][0] != 0)
 				proteinSeq.println(GC.TranslateRNAseq(allInfo[0][0], this.Sequence));

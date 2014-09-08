@@ -80,6 +80,59 @@ public class RNAfunctions
 
 	}
 
+	
+	
+	public static int[] getExtension(int []before, int[] after){
+		int stop = after.length - before.length;
+		for(int j = 0; j < stop+1;j++){
+			int[] subSeq = Functions.getSubarray(after, j, before.length+j);
+//			System.out.println("compare startr:   ");
+//			System.out.println(RNAfunctions.DNAInt2String(before));
+//			System.out.println(RNAfunctions.DNAInt2String(subSeq));
+//			System.out.println("compare Finished:   ");
+			if(theSame(subSeq ,before)){
+//				System.out.println("Seq foudn:   ");
+				if(after.length-before.length-j > j )
+					return Functions.getSubarray(after, before.length+j);
+				else
+					return Functions.getSubarray(after, 0,j);
+			}
+			
+		}
+		System.out.println("compare startr:   ");
+		System.out.println(RNAfunctions.DNAInt2String(before));
+		System.out.println(RNAfunctions.DNAInt2String(after));
+		System.out.println("compare Finished:   ");
+		return null;
+		
+
+	}
+	
+	public static String getBeforeOrAfter(int []before, int[] after){
+		int stop = after.length - before.length;
+		for(int j = 0; j < stop+1;j++){
+			int[] subSeq = Functions.getSubarray(after, j, before.length+j);
+//			System.out.println("compare startr:   ");
+//			System.out.println(RNAfunctions.DNAInt2String(before));
+//			System.out.println(RNAfunctions.DNAInt2String(subSeq));
+//			System.out.println("compare Finished:   ");
+			if(theSame(subSeq ,before)){
+//				System.out.println("Seq foudn:   ");
+				if(after.length-before.length-j > j )
+					return "After";
+				else
+					return "Before";
+			}
+			
+		}
+		return "Strange";
+	}
+	
+	
+	
+	
+	
+	
 	public static void printDistance(double[][] distance){
 		for(int i = 0; i < distance.length; i++){
 			for(int j = 0; j < distance[i].length;j++){

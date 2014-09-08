@@ -50,8 +50,9 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 
 	public FastaSequences(String dir, String file){
 		verbose = false;
-		readFastaFile(dir,file);
+		parseAllFasta(file,dir);
 	}
+	
 	FastaSequences(String dir, String file, int nrOfExperiments){
 		verbose = false;
 		readFastaFile(dir,file, nrOfExperiments);
@@ -138,6 +139,44 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		return C;
 	}
 	
+	public static FastaSequences getExtension(FastaSequences A, FastaSequences B,String DifferenceOut){
+		FastaSequences C = new FastaSequences();
+		try{
+			ExtendedWriter EW = new ExtendedWriter(new FileWriter(DifferenceOut));
+			Hashtable<String, FastaSequence> HT = A.convertToHashTable2();
+
+			int progress = 1;
+			System.out.println(B.size());
+			for(int i = 0; i < B.size();i++){
+				String Name = B.get(i).Name;
+				if(Name.indexOf(" ") >-1)
+					Name = Name.split(" ")[0];			
+				if(HT.containsKey(Name)){
+					if(HT.get(Name).getLength() != B.get(i).getLength()){
+						int[] seq1 = HT.get(Name).getSequence();
+						int[] seq2 = B.get(i).getSequence();
+						int[] extension = RNAfunctions.getExtension(seq1,seq2);
+						if(extension != null){
+							EW.println(Name+"_"+RNAfunctions.getBeforeOrAfter(seq1,seq2));
+							EW.println(RNAfunctions.DNAInt2String(extension));
+						}else{
+							System.out.println("Something strange with "+Name);
+						}
+					}
+				}
+				if(i> B.size()/100*progress){
+					System.out.print(".");
+					progress++;
+				}
+			}
+			EW.flush();
+			EW.close();
+		}catch(Exception E){
+			E.printStackTrace();
+		}
+		
+		return C;
+	}
 	
 	
 	
@@ -379,8 +418,8 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 	
 	public static void extractSeqAboveLength(String inFile, String outFile, String WD, int length){
 		try{
-			FastaSequences.oneLine(inFile,WD+"/temp.fa");
-			ExtendedReader ER = new ExtendedReader(new FileReader(WD+"/temp.fa"));
+			FastaSequences.oneLine(inFile,WD+"/"+inFile+"_temp");
+			ExtendedReader ER = new ExtendedReader(new FileReader(WD+"/"+inFile+"_temp"));
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(outFile));
 			while(ER.more()){
 				if((char)ER.lookAhead() == '#'){
@@ -395,7 +434,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 					}
 				}
 			}
-			IOTools.deleteFile(WD, "temp.fa");
+			IOTools.deleteFile(WD, inFile+"_temp");
 			ER.close();
 			EW.flush();
 			EW.close();
@@ -565,7 +604,74 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		return null;
 	}
 
+	public static ArrayList <String> splitSize(String inDir, String inFile, int Size, String suffix){
+		String inFileBase = IOTools.getFileBase(inFile, suffix);
+		
+		ArrayList <String> splitFileNames = new ArrayList<String>();
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inDir+"/"+inFile));
 
+			int temp = Size;
+			int length = 0;
+			int number = 0;
+			while(ER.more()){
+				if(!IOTools.isDir(inDir+"/tmp"))
+					IOTools.mkDir(inDir+"/tmp");
+				ExtendedWriter EW = new ExtendedWriter(new FileWriter (inDir+"/tmp/"+inFileBase+"_"+number+"."+suffix));
+				splitFileNames.add(inFileBase+"_"+number+"."+suffix);
+				length = 0;
+				while(ER.more() && length < Size){
+					if((char)ER.lookAhead() == '>'){
+						String seqName = ER.readLine();
+						EW.println(seqName);
+						while(ER.more() && (char)ER.lookAhead() != '>'){
+							String seq = ER.readLine();
+							EW.println(seq);
+							length = length+seq.length();
+						}
+					}
+				}
+				EW.flush();
+				EW.close();
+				number++;
+			}
+			ER.close();
+			return splitFileNames;
+		}catch(Exception E){E.printStackTrace();}
+		return null;
+	}
+
+	public static ArrayList <String> splitSizefileNames(String inDir, String inFile, int Size, String suffix){
+		String inFileBase = IOTools.getFileBase(inFile, suffix);
+		
+		ArrayList <String> splitFileNames = new ArrayList<String>();
+		try{
+			ExtendedReader ER = new ExtendedReader(new FileReader (inDir+"/"+inFile));
+
+			int temp = Size;
+			int length = 0;
+			int number = 0;
+			while(ER.more()){
+				if(!IOTools.isDir(inDir+"/tmp"))
+					IOTools.mkDir(inDir+"/tmp");
+				splitFileNames.add(inFileBase+"_"+number+"."+suffix);
+				length = 0;
+				while(ER.more() && length < Size){
+					if((char)ER.lookAhead() == '>'){
+						String seqName = ER.readLine();
+						while(ER.more() && (char)ER.lookAhead() != '>'){
+							String seq = ER.readLine();
+							length = length+seq.length();
+						}
+					}
+				}
+				number++;
+			}
+			ER.close();
+			return splitFileNames;
+		}catch(Exception E){E.printStackTrace();}
+		return null;
+	}
 	
 	public static void getLength(String inFile){
 		try{
@@ -793,7 +899,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		this.add(FS);
 	}
 	
-	private static void getORFs(ExtendedReader ER,ExtendedWriter EW,ExtendedWriter EW2,ExtendedWriter EW3,ExtendedWriter EW4,GeneticCode GC){
+	private static void getORFs(ExtendedReader ER,ExtendedWriter EW,ExtendedWriter EW2,ExtendedWriter EW3,ExtendedWriter EW4,ExtendedWriter EW5,GeneticCode GC){
 		String InfoLine = ER.readLine();
 		//>853_36_1821_F3,187_50.1,155_50.1,149_50.1,137_50.1,130_50.1,24_50.1,18_50.1
 
@@ -820,7 +926,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 		else
 			FS = new FastaSequence(InfoLine.substring(0,InfoLine.indexOf(" ")),new String(A));
 			
-		FS.findLongestORF(0,EW,EW2,EW3,EW4,GC);
+		FS.findLongestORF(0,EW,EW2,EW3,EW4,EW5,GC);
 	}
 	
 	
@@ -1164,6 +1270,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 			ExtendedWriter EW2 = new ExtendedWriter(new FileWriter(fileBase+".ORFs."+suffix));
 			ExtendedWriter EW3 = new ExtendedWriter(new FileWriter(fileBase+".523prime."+suffix));
 			ExtendedWriter EW4 = new ExtendedWriter(new FileWriter(fileBase+".peptide."+suffix));
+			ExtendedWriter EW5 = new ExtendedWriter(new FileWriter(fileBase+".subset."+suffix));
 			
 			EW.println("Name\tDir\tORFlength\tSeqLength\tstart\tstop\tkind\tGC_count");
 
@@ -1175,7 +1282,7 @@ public class FastaSequences extends ArrayList <FastaSequence> implements Seriali
 					ER.skipLine();
 				}
 				else{	
-					getORFs(ER,EW,EW2,EW3,EW4,GC);
+					getORFs(ER,EW,EW2,EW3,EW4,EW5,GC);
 					pointer++;
 				}
 				if(pointer > count ){

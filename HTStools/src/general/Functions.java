@@ -21,6 +21,22 @@ public abstract class Functions{
 		//System.out.println(getFileWithoutSuffix("test.fastq","fastq"));
 	}
 	
+	
+	public static int countOccurrences(String haystack, String needleString){
+		char[] needles = needleString.toCharArray(); 
+	    int count = 0;
+	    for (int i=0; i < haystack.length(); i++)
+	    {
+	        for(int j = 0; j < needles.length; j++){
+	        	if (haystack.charAt(i) == needles[j]){
+	             count++;
+	             j = needles.length;
+	        	}
+	        }
+	    }
+	    return count;
+	}
+	
 
 	
 	public static int[] sum(int[] A, int [] B){
@@ -59,9 +75,9 @@ public abstract class Functions{
 			{
 				key = args[i];
 				val = new String();
-				if(i+1 < args.length && args[i+1].charAt(0) == '\''){
+				if(i+1 < args.length && args[i+1].charAt(0) == '['){
 					
-					while (i+1 < args.length && (args[i+1].charAt(args[i+1].length()-1) != '\'' || args[i+1].charAt(0) != '\''))
+					while (i+1 < args.length && (args[i+1].charAt(args[i+1].length()-1) != '[' || args[i+1].charAt(0) != '['))
 					{
 						val += args[i+1] + " ";
 						i++;

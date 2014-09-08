@@ -1,5 +1,6 @@
 package Sequence;
 
+import extra.ExtendedReader;
 import general.ExtendedWriter;
 import general.Functions;
 import general.GetFrequencies;
@@ -10,11 +11,6 @@ import java.util.Hashtable;
 
 public class Generate {
 
-	String dir;
-	String inFile;
-	String outFile;
-	int kmer;
-	int nrOfGeneratedSequences;
 
 
 	public static void run(Hashtable<String,String> T){
@@ -24,7 +20,7 @@ public class Generate {
 		outFile = inFile = dir = null;
 		kmer = nrOfGeneratedSequences = 0;
 		boolean allPresent = true;
-	
+
 		dir= Functions.getValue(T, "-d", ".");
 		if(T.containsKey("-i"))
 			inFile= Functions.getValue(T, "-i", ".");
@@ -38,7 +34,12 @@ public class Generate {
 		outFile= Functions.getValue(T, "-o", "generated");
 		String[] freqArray = Functions.getValue(T, "-f","test").split(" ");
 		int length = Integer.parseInt(Functions.getValue(T, "-l","0"));
+	}
 
+	private  static double[] getKmerFrequencies(String dir, String kmerFile){
+		ExtendedReader ER = ExtendedReader.getFileReader(dir+"/"+kmerFile);
+		ER.readLine();
+		String[] freqArray = ER.readLine().split(" ");
 		double[] freqs = null;
 		if(freqArray.length > 3){
 			freqs = new double[freqArray.length];
@@ -46,55 +47,59 @@ public class Generate {
 				freqs[i] = Double.parseDouble(freqArray[i]);
 			}
 		}
+		return freqs;
+	}
 
 
-
-		FastaSequences A = new FastaSequences(dir,inFile);
+	public static void calculateKmerDistribution(String dir, String inFile, String kmerFile, int kmer){
 		File infile = new File(dir+"/"+inFile);
+		ExtendedWriter EW = ExtendedWriter.getFileWriter(dir+"/"+kmerFile);
 		try{
-			if(freqs == null)
-				freqs = GetFrequencies.getKmerFrequencies(GetFrequencies.parseBigFasta(infile),kmer);
-			System.out.println("Frequencies used:");
-			System.out.print(freqs[0]);
+			double[] freqs = GetFrequencies.getKmerFrequencies(GetFrequencies.parseBigFasta(infile),kmer);
+			EW.println("Kmer freq used:");
+			EW.print(freqs[0]);
 			for(int i = 1; i < freqs.length; i++){
-				System.out.print(" "+freqs[i]);
+				EW.print(" "+freqs[i]);
 			}
-			System.out.println();
-
-			if(length == 0){
-				for(int i = 0; i < nrOfGeneratedSequences;i++){
-					try{
-						ExtendedWriter EW = new ExtendedWriter(new FileWriter(dir+"/"+outFile+"_"+i+".fa"));
-						for(int j = 0; j < A.size();j++){
-							length = A.get(j).Sequence.length;
-							byte[] seq = GetFrequencies.generateSequence(length,kmer-1,freqs);
-							char[] decodedSeq = GetFrequencies.decodeToChar(seq,"NACGTN");
-							EW.println(">generated_"+j);
-							EW.println(decodedSeq);
-						}
-						EW.flush();
-						EW.close();
-					}catch(Exception E){E.printStackTrace();}
-				}
-			}
-			else{
-				try{
-					ExtendedWriter EW = new ExtendedWriter(new FileWriter(dir+"/"+outFile+".fa"));
-					for(int i = 0; i < nrOfGeneratedSequences;i++){
-						byte[] seq = GetFrequencies.generateSequence(length,kmer-1,freqs);
-						char[] decodedSeq = GetFrequencies.decodeToChar(seq,"NACGTN");
-						EW.println(">generated_"+i);
-						EW.println(decodedSeq);
-					}
-					EW.flush();
-					EW.close();
-				}catch(Exception E){E.printStackTrace();}
-			}
-
-
+			EW.println();
 		}catch(Exception E){E.printStackTrace();}
 	}
 
+
+	public static void generateSequenceFile(String dir, String seqFile, String kmerFile, String outFile, int kmers){
+		FastaSequences A = new FastaSequences(dir,seqFile);
+		double[] freqs = getKmerFrequencies(dir,kmerFile);
+		try{
+			ExtendedWriter EW = ExtendedWriter.getFileWriter(dir+"/"+outFile);
+			for(int j = 0; j < A.size();j++){
+				int length = A.get(j).Sequence.length;
+				byte[] seq = GetFrequencies.generateSequence(length,kmers-1,freqs);
+				char[] decodedSeq = GetFrequencies.decodeToChar(seq,"NACGTN");
+				EW.println(A.getName()+"_generated");
+				EW.println(decodedSeq);
+			}
+			EW.flush();
+			EW.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+	
+	public static  void generateSequenceFile(String dir, String kmerFile, String outFile, int kmers, int start, double stop, int nrOfSequences){
+		double[] freqs = getKmerFrequencies(dir,kmerFile);
+		try{
+			ExtendedWriter EW = ExtendedWriter.getFileWriter(dir+"/"+outFile);
+			for(int j = 0; j < nrOfSequences;j++){
+				int length = start+(int)(Math.random()*(stop-start));
+				byte[] seq = GetFrequencies.generateSequence(length,kmers-1,freqs);
+				char[] decodedSeq = GetFrequencies.decodeToChar(seq,"NACGTN");
+				EW.println(">generated_"+j);
+				EW.println(decodedSeq);
+			}
+			EW.flush();
+			EW.close();
+		}catch(Exception E){E.printStackTrace();}
+	}
+	
+	
 
 
 }

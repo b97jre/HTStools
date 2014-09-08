@@ -24,20 +24,47 @@ public class StructuralVariationSample {
 	
 
 	
+	public void  removeCount(){
+			this.majorCount = 0;
+			this.minorCount = 0;
+	}
+
+
 	public int[]  changeCount(StructuralVariationSample A,int[] info){
 		if(A.notPresent){
 			this.majorCount = 0;
 			this.minorCount = 0;
 			info[4]++;
 		}
-		else if(this.isHomozygous() && A.isHomozygous())info[0]++;
-		else if(!this.isHomozygous() && !A.isHomozygous())info[1]++;
-		else if(!this.isHomozygous() && A.isHomozygous())info[2]++;
-		else if(this.isHomozygous() && !A.isHomozygous())info[3]++;
+		else if(this.isHomozygous() && A.isHomozygous())   info[0]++;
+		else if(!this.isHomozygous() && !A.isHomozygous()) info[1]++;
+		else if(!this.isHomozygous() && A.isHomozygous())  info[2]++;
+		else if(this.isHomozygous() && !A.isHomozygous())  info[3]++;
 		this.majorCount = A.majorCount;
 		this.minorCount = A.minorCount;
 		return info;
 	}
+
+	
+	
+	
+	
+	
+	
+	public int[]  getVCFinfo(int[] info){
+		if(this.notPresent){ return info;
+		}
+		if(this.isHomozygous()){ 
+			if(this.chr1 =='0') info[0]++;
+			else info[1]++;
+			if(this.phased) info[2]++;
+		}else{
+			info[3]++;
+			if(this.phased) info[4]++;
+		}
+		return info;
+	}
+	
 	
 	public StructuralVariationSample(String info) {
 		// 0/1:36,36:72:99:656,0,661 			(unphased)
@@ -86,6 +113,49 @@ public class StructuralVariationSample {
 		if(chr1 == chr2) return true;
 		return false;
 	}
+	public void setCount(int count, boolean mother){
+		if(mother)setMotherCount(count);
+		else setFatherCount(count);
+	}
+	
+	public void setFatherCount(int count){
+		if(chr2 == '0')	
+			this.majorCount = count;
+		else
+			this.minorCount = count;
+	}
+
+	public void setMotherCount(int count){
+		if(chr1 == '0')	
+			this.majorCount = count;
+		else
+			this.minorCount = count;
+	}
+	
+
+	
+	
+	public void addCount(int count, boolean mother){
+		if(mother)addMotherCount(count);
+		else addFatherCount(count);
+	}
+	
+	public void addFatherCount(int count){
+		if(chr2 == '0')	
+			this.majorCount += count;
+		else
+			this.minorCount += count;
+	}
+
+	public void addMotherCount(int count){
+		if(chr1 == '0')	
+			this.majorCount += count;
+		else
+			this.minorCount += count;
+	}
+	
+	
+	
 	
 	public int getMotherCount(){
 		if(chr1 == '0')	
@@ -95,6 +165,26 @@ public class StructuralVariationSample {
 			
 	}
 
+	public char getMotherAllele(){
+		return chr1;
+	}
+	public char getPhasedMotherAllele(){
+		if(this.phased)
+			return chr1;
+		return 'N';
+	}
+
+	
+	public char getFatherAllele(){
+		return chr2;
+	}
+	public char getPhasedFatherAllele(){
+		if(this.phased)
+			return chr2;
+		return 'N';
+	}
+	
+	
 	public int getFatherCount(){
 		if(chr2 == '0')	
 			return this.majorCount;
@@ -127,6 +217,9 @@ public class StructuralVariationSample {
 		
 	}
 	*/
+
+	
+
 	
 	
 	public void print(ExtendedWriter EW){

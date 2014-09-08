@@ -17,6 +17,8 @@ public class StructuralVariation {
 	String FILTER;
 	String INFO;
 	String FORMAT;
+	
+	boolean SkellyPrint;
 
 
 
@@ -35,6 +37,7 @@ public class StructuralVariation {
 		this.FILTER = StructuralVariationLine[6];
 		this.INFO = StructuralVariationLine[7];
 		this.FORMAT = StructuralVariationLine[8];
+		this.SkellyPrint = false;
 		//TODO	
 		this.Samples = new Hashtable<String, StructuralVariationSample>();
 
@@ -150,6 +153,15 @@ public class StructuralVariation {
 		return !Samples.get(sample).isHomozygous();
 	}
 
+	public boolean isPhased(String sample){
+		return Samples.get(sample).phased;
+	}
+
+	public void unPhase(String sample){
+		Samples.get(sample).phased = false;
+	}
+	
+	
 	public int getMotherCount(String sample){
 		return Samples.get(sample).getMotherCount();
 	}
@@ -171,7 +183,25 @@ public class StructuralVariation {
 
 
 
+	public void removeCounts(String sample){
+		for(int i = 0; i < this.Samples.size();i++)
+		{
+			this.Samples.get(sample).removeCount();
+		}
 
+	}
+	
+	
+	public void setCounts(String sample,int Count,boolean mother){
+			this.Samples.get(sample).setCount(Count,mother);
+
+	}
+
+	public void addCounts(String sample,int Count,boolean mother){
+			this.Samples.get(sample).addCount(Count,mother);
+
+	}
+	
 
 
 	public void printSamples(ExtendedWriter EW, ArrayList<String> samples){
@@ -184,6 +214,39 @@ public class StructuralVariation {
 
 	}
 
+	public int[] getSampleVCFinfo(int[] vcfInfo, String sample){
+			return this.Samples.get(sample).getVCFinfo(vcfInfo);
+	}
+	
+	
+	public char[] getPhasedSNP(ExtendedWriter EW, String sample,boolean father){
+		char allele = '0'; 
+		if(father)
+			allele = this.Samples.get(sample).getPhasedFatherAllele();
+		else
+			allele = this.Samples.get(sample).getPhasedMotherAllele();
+		
+		if(allele == '0'){return this.major;}
+		if(allele == '1'){return this.minor;}
+		char[] NN = new char[1];
+		NN[0] = 'N'; 
+		return NN;
+	}
+
+	
+	
+	public char[] getNNSNP(ExtendedWriter EW, String sample){
+		char allele = '0'; 
+		char[] NN = new char[1];
+		NN[0] = 'N'; 
+		if(this.Samples.get(sample).isHomozygous()){
+			allele = this.Samples.get(sample).getFatherAllele();
+			if(allele == '0'){return this.major;}
+			if(allele == '1'){return this.minor;}
+		}
+		return NN;
+	}
+	
 	
 	public void printSample(ExtendedWriter EW, String sample){
 		EW.print(ID+"\t"+new String(this.major)+"\t"+new String(this.minor)+"\t"+this.QUAL+"\t"+this.FILTER+"\t"+this.INFO+"\t"+this.FORMAT);
