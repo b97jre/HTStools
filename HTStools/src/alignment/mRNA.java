@@ -30,7 +30,9 @@ public class mRNA extends Gene implements Serializable {
 
 	protected String parent;
 	protected ArrayList <Exon> exons;
-
+	protected ArrayList <FUTR> FUTRs;
+	protected ArrayList <TUTR> TUTRs;
+	protected ArrayList <CDS> CDSs; 
 
 	mRNA(int left, int right,boolean plusStrand,String ID,String Name, String parent, String description){
 		this.ID = ID;
@@ -42,6 +44,34 @@ public class mRNA extends Gene implements Serializable {
 		this.description = description;
 	}
 
+
+	public boolean isParent(String ID){
+		if(this.ID.compareTo(ID) == 0) return true;
+		return false;
+	}
+
+	public boolean add5UTR(FUTR newExon){
+		if(newExon.parent.compareTo(ID) == 0){
+			if(this.FUTRs == null)
+				this.FUTRs = new ArrayList<FUTR>();
+			this.FUTRs.add(newExon);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean add3UTR(TUTR newExon){
+		if(newExon.parent.compareTo(ID) == 0){
+			if(this.TUTRs == null)
+				this.TUTRs = new ArrayList<TUTR>();
+			this.TUTRs.add(newExon);
+			return true;
+		}
+		return false;
+	}
+
+
+
 	public boolean addExon(Exon newExon){
 		if(newExon.parent.compareTo(ID) == 0){
 			if(this.exons == null)
@@ -51,6 +81,17 @@ public class mRNA extends Gene implements Serializable {
 		}
 		return false;
 	}
+
+	public boolean addCDS(CDS newExon){
+		if(newExon.parent.compareTo(ID) == 0){
+			if(this.CDSs == null)
+				this.CDSs = new ArrayList<CDS>();
+			this.CDSs.add(newExon);
+			return true;
+		}
+		return false;
+	}
+
 
 	public void printPremRNA( ExtendedWriter EW, int[] sequence){
 
@@ -108,6 +149,140 @@ public class mRNA extends Gene implements Serializable {
 			EW.println();
 		}
 	}
+
+	public void printUpstream_5UTR_FirstIntron_Sequence( ExtendedWriter EW, int[] sequence,int upstreamLength){
+		String name = ">"+this.Name;
+		String seq = "";
+		if(plusStrand){
+			name += " | + ";
+			//			System.out.println(Functions.fixedLength(ContigName, 20)+Functions.fixedLength(this.Name, 20)+Functions.fixedLength(left,10 )+Functions.fixedLength(right,10 )+Functions.fixedLength("+",5 ));
+			// print upstreamRegion 
+			int left =  this.left - upstreamLength;
+			if(left < 0 ) left = 0;
+			int right = this.left-1;
+			name += " | upstream :"+left+" - "+right; 
+			seq += RNAfunctions.DNAInt2String(Functions.getSubarray(sequence,left-1 , right ));
+
+			// print FUTR if it exist
+			if(FUTRs != null){
+				Collections.sort(FUTRs,new Comparator<FUTR>() {
+					public int compare(FUTR exon1, FUTR exon2) {
+						return  exon1.left - exon2.left ;
+					}
+				});
+				left  = FUTRs.get(0).left;
+				right = FUTRs.get(FUTRs.size()-1).right;
+
+				name += " | 5UTR :"+left+" - "+right; 
+				seq += RNAfunctions.DNAInt2String(Functions.getSubarray(sequence,left-1 , right ));
+
+				right = FUTRs.get(FUTRs.size()-1).right;
+			}
+
+			// print first intron if it exist
+			boolean intron = false;
+			if(CDSs != null){
+				Collections.sort(CDSs,new Comparator<CDS>() {
+					public int compare(CDS exon1, CDS exon2) {
+						return  exon1.left - exon2.left ;
+					}
+				});
+				if(CDSs.get(0).left <= right+1){
+					// print intron if first CDS is  on the same exon as the FUTR and there are CDS on more than one exon 
+					if(CDSs.size() > 1){
+						left = CDSs.get(0).right+1;
+						right  = CDSs.get(1).left-1;
+						name += " | intron :"+left+" - "+right; 
+						seq += RNAfunctions.DNAInt2String(Functions.getSubarray(sequence,left-1 , right ));
+					}
+				}else{
+					left = right+1;
+					right = CDSs.get(0).left;
+
+					// print intron between the FUTR and the first CDS since they are on different exons 
+					name += " | intron :"+left+" - "+right; 
+					seq += RNAfunctions.DNAInt2String(Functions.getSubarray(sequence,left-1 , right ));
+				}					
+			}
+		}
+		else{
+			name += " | - ";
+
+			// print upstreamRegion 
+			int right =  this.right + upstreamLength;
+			if(sequence.length < right ) right  = sequence.length;
+			int left = this.right+1;
+			name += " | upstream :"+right+" - "+left; 
+			seq += RNAfunctions.DNAInt2String(
+					RNAfunctions.getComplementary(
+							Functions.getSubarray(sequence, left-1,right)
+							)
+					)
+					;
+
+			// print FUTR if it exist
+			if(FUTRs != null ){
+				Collections.sort(FUTRs,new Comparator<FUTR>() {
+					public int compare(FUTR exon1, FUTR exon2) {
+						return  exon1.left - exon2.left ;
+					}
+				});
+				left  = FUTRs.get(0).left;
+				right = FUTRs.get(FUTRs.size()-1).right;					
+
+				name += " | 5UTR :"+right+" - "+left; 
+				seq += RNAfunctions.DNAInt2String(
+						RNAfunctions.getComplementary(
+								Functions.getSubarray(sequence, left-1, right)
+								)
+						);
+			}
+
+			// print first intron if it exist
+			boolean intron = false;
+			if(CDSs != null){
+				Collections.sort(CDSs,new Comparator<CDS>() {
+					public int compare(CDS exon1, CDS exon2) {
+						return  exon1.left - exon2.left ;
+					}
+				});
+
+				if(CDSs.get(CDSs.size()-1).right == left-1){
+					// print intron between the first two CDSs if they exist 
+					if(CDSs.size() > 1){
+						right = CDSs.get(CDSs.size()-1).left-1;
+						left = CDSs.get(CDSs.size()-2).right+1;
+						// print intron between the FUTR and the first CDS since they are on different exons 
+						name += " | intron :"+right+" - "+left; 
+						seq += RNAfunctions.DNAInt2String(
+								RNAfunctions.getComplementary(
+										Functions.getSubarray(sequence, left-1, right)
+										)
+								);
+					}
+				}else{
+					// print intron if first CDS is not on the same exon as the FUTR 
+					if(CDSs.size() > 1){
+						left = CDSs.get(CDSs.size()-1).right+1;
+						right = left-1;;
+
+						name += " | intron :"+right+" - "+left; 
+						seq += RNAfunctions.DNAInt2String(
+								RNAfunctions.getComplementary(
+										Functions.getSubarray(sequence, left-1, right)
+										)
+								);
+					}
+				}
+			}
+		}
+		//System.out.println("name :" + name);
+		EW.println(name);
+		EW.println(seq);
+
+	}
+
+
 	public void printmRNA( ExtendedWriter EW, int[] sequence,String ContigName,Hashtable <Integer,StructuralVariation> SVs, String SampleName){
 
 
@@ -335,7 +510,7 @@ public class mRNA extends Gene implements Serializable {
 				}
 				pointer++;
 			}
-			
+
 		}
 		info.println(Functions.fixedLength(ContigName, 20)+Functions.fixedLength(this.Name, 20)+Functions.fixedLength(phase, 20)+Functions.fixedLength(leftStart,10 )+
 				Functions.fixedLength(this.right,10 )+Functions.fixedLength(nrOfHeterozygousSites, 5)+Functions.fixedLength(motherCount, 7)+Functions.fixedLength(fatherCount, 7));
@@ -343,4 +518,7 @@ public class mRNA extends Gene implements Serializable {
 	}
 
 
+
+
 }
+
