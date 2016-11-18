@@ -20,9 +20,6 @@ import sun.org.mozilla.javascript.internal.EcmaError;
 
 import com.sun.org.apache.xpath.internal.functions.Function;
 
-import Sequence.CfastaSequences;
-import Sequence.Solid;
-
 import general.ExtendedReader;
 import general.ExtendedWriter;
 
@@ -40,7 +37,6 @@ public class Databases implements Serializable{
 	protected Hashtable <String,Database> Databases2;
 	protected String[] DatabaseOrder;
 	protected ArrayList <String> samples;
-	protected CfastaSequences solidSequences;
 
 	public static void main(String[] args) {
 		int length = args.length;
@@ -78,16 +74,16 @@ public class Databases implements Serializable{
 		this.Databases2 = new Hashtable<String,Database>();
 	}
 
-
-	public void addSolidSequences(String solidDir, String solidFile){
-		this.loadSolidSequences(solidDir, solidFile);
-		this.mapSolidSequences();
-	}
-
-	public void addRmapperSequences(String rmapperDir, String rmapperFile){
-		this.loadSolidSequences(rmapperDir, rmapperFile);
-		this.mapSolidSequences();
-	}
+//
+//	public void addSolidSequences(String solidDir, String solidFile){
+//		this.loadSolidSequences(solidDir, solidFile);
+//		this.mapSolidSequences();
+//	}
+//
+//	public void addRmapperSequences(String rmapperDir, String rmapperFile){
+//		this.loadSolidSequences(rmapperDir, rmapperFile);
+//		this.mapSolidSequences();
+//	}
 
 
 
@@ -177,7 +173,7 @@ public class Databases implements Serializable{
 				EW.println();
 				EW.println();
 				EW.println("Reference :"+ new File(file).getAbsolutePath());
-				EW.println("ÊSNPfile :"+ new File(VCF2).getAbsolutePath());
+				EW.println("SNPfile :"+ new File(VCF2).getAbsolutePath());
 				EW.println();
 				EW.println("File with left phased information and non-phased heterozygous sites are replaced with N");
 				EW.println(dir+"/"+sample+"."+VCF2+"_Mother.vcf");
@@ -236,9 +232,12 @@ public class Databases implements Serializable{
 				EW2.close();
 				
 				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName);
-				A.printHomozygousGenome(EW,sample);
+				EW2 =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".changedSites");
+				A.printHomozygousGenome(EW,EW2,sample);
 				EW.flush();
 				EW.close();
+				EW2.flush();
+				EW2.close();
 			
 				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phaseByTransmission.info");
 				EW.println("Files generated using java -Xmx20G -jar /glob/johanr/bin/HTStools.jar ");
@@ -312,12 +311,7 @@ public class Databases implements Serializable{
 			
 			A.genotypemPileUpFile(fileName, sample, fatherSep, motherSep, whatCounts);
 			A.printVCFSample(outDir, mpileUpFileName+"_"+referenceName, sample, VCF2);
-			
-			
 		}
-		
-		
-		
 
 		if(T.containsKey("-getVCFinfo")){
 			boolean readPhased = false;
@@ -358,9 +352,8 @@ public class Databases implements Serializable{
 
 
 		if(T.containsKey("-printHomozygousGenome")){
-			boolean readPhased = false;
 			String file = Functions.getValue(T, "-R", ".");
-			String VCF2 = Functions.getValue(T, "-transmissionPhasedVCF");
+			String VCF2 = Functions.getValue(T, "-vcfFile");
 			Databases  A= new Databases();
 
 			String referenceName = new File(file).getName();
@@ -369,18 +362,26 @@ public class Databases implements Serializable{
 			else
 				A.loadDatabasesFile(dir+"/"+file);
 
+			boolean correctVCFfile = false;
 			if(IOTools.fileExists(VCF2))
-				A.loadVCFFile(VCF2);
+				correctVCFfile = A.loadVCFFile(VCF2);
 			else
-				A.loadVCFFile(dir+"/"+VCF2);
-			A.addPhase(!readPhased);
+				correctVCFfile = A.loadVCFFile(dir+"/"+VCF2);
+			if(!correctVCFfile){
+				System.out.println("Something wrong with the VCF info program aborted");
+				return;
+			}
 
 			String sample = Functions.getValue(T, "-sample");
 			try{
 				ExtendedWriter EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName);
-				A.printHomozygousGenome(EW,sample);
+				ExtendedWriter EW2 =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".changedSites");
+				A.printHomozygousGenome(EW,EW2,sample);
 				EW.flush();
 				EW.close();
+				EW2.flush();
+				EW2.close();
+				
 				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".info");
 				EW.println("File generated using java -Xmx20G -jar /glob/johanr/bin/HTStools.jar ");
 				EW.println("Flags to get this file");
@@ -404,6 +405,7 @@ public class Databases implements Serializable{
 			}catch(Exception E){
 				E.printStackTrace();
 			}
+
 		}
 
 
@@ -879,16 +881,16 @@ public class Databases implements Serializable{
 		}
 
 
-		if(T.containsKey("-printDistribution")){
-			Databases B = new Databases("temp", DatabasesDir, DatabasesFile);
-
-			int cutoff = Integer.parseInt(Functions.getValue(T, "-x", "1"));
-			B.loadRmapperSequences(resultDir, resultFile);
-			B.mapSolidSequences();
-			B.printDistribution(cutoff, outDir,resultFile);
-
-		}
-
+//		if(T.containsKey("-printDistribution")){
+//			Databases B = new Databases("temp", DatabasesDir, DatabasesFile);
+//
+//			int cutoff = Integer.parseInt(Functions.getValue(T, "-x", "1"));
+//			B.loadRmapperSequences(resultDir, resultFile);
+//			B.mapSolidSequences();
+//			B.printDistribution(cutoff, outDir,resultFile);
+//
+//		}
+//
 		System.out.println("End of databases");
 
 		//runPrograms(DatabasesDir, DatabasesFile,solidDir, solidFile,resultDir, resultFile,outDir,
@@ -933,33 +935,33 @@ public class Databases implements Serializable{
 		int cutoff = Integer.parseInt(Functions.getValue(T, "-cutoff", "100"));
 
 		Databases B = new Databases(experiment, DatabasesDir, DatabasesFile);
-		if(T.containsKey("-solidDir")){
-			B.loadSolidSequences(solidDir, solidFile);
-		}
-		if(T.containsKey("-resultDir")){
-			if(!experiment.contains("temp")){
-				resultDir = resultDir+"/"+experiment;
-				if(nucleotideLength > 0)
-					resultDir = resultDir+"/"+nucleotideLength;
-				if(nrOfHits > 0){
-					resultFile = experiment+"."+DatabasesFile+".rmapper."+nrOfHits;
-					if(T.containsKey("-extra"))
-						resultFile += "."+ Functions.getValue(T, "-extra", "rmapper");
-				}
-			}
-			B.loadRmapperSequences(resultDir, resultFile);
-		}
-
-		B.mapSolidSequences();
-
-		if(T.containsKey("-countGroups")){
-			B.solidSequences.countGroups();
-		}
-
-		if(T.containsKey("-countlocations")){
-			int total = B.countLocations();
-			System.out.println(experiment+"\t"+nucleotideLength+"\t"+nrOfHits+"\t"+B.getNrOfSequences()+"\t"+B.getNrOfHits2()+"\t"+total);
-		}
+//		if(T.containsKey("-solidDir")){
+//			B.loadSolidSequences(solidDir, solidFile);
+//		}
+//		if(T.containsKey("-resultDir")){
+//			if(!experiment.contains("temp")){
+//				resultDir = resultDir+"/"+experiment;
+//				if(nucleotideLength > 0)
+//					resultDir = resultDir+"/"+nucleotideLength;
+//				if(nrOfHits > 0){
+//					resultFile = experiment+"."+DatabasesFile+".rmapper."+nrOfHits;
+//					if(T.containsKey("-extra"))
+//						resultFile += "."+ Functions.getValue(T, "-extra", "rmapper");
+//				}
+//			}
+//			B.loadRmapperSequences(resultDir, resultFile);
+//		}
+//
+//		B.mapSolidSequences();
+//
+//		if(T.containsKey("-countGroups")){
+//			B.solidSequences.countGroups();
+//		}
+////
+//		if(T.containsKey("-countlocations")){
+//			int total = B.countLocations();
+//			System.out.println(experiment+"\t"+nucleotideLength+"\t"+nrOfHits+"\t"+B.getNrOfSequences()+"\t"+B.getNrOfHits2()+"\t"+total);
+//		}
 
 		if(T.containsKey("-printDistribution")){
 			B.printDistribution(cutoff, outDir,resultFile);
@@ -972,64 +974,64 @@ public class Databases implements Serializable{
 
 	}
 
-
-	private void loadSolidSequences(String dir, String file){
-		this.solidSequences = new CfastaSequences();
-		this.solidSequences.addSolidSequences(dir,file);
-	}
-
-	private void loadRmapperSequences(String dir, String file){
-		//System.out.print("reading rmapper files.......");
-		this.solidSequences = new CfastaSequences();
-		this.solidSequences.addRmapperSequences(dir,file);
-		//System.out.println("finished");
-		//this.solidSequences.countHits();
-	}
-
-	private void removeNonredundantRmapperSequences(String dir, String file){
-		this.solidSequences = new CfastaSequences();
-		this.solidSequences.addRmapperSequences(dir,file);
-
-
-
-
-	}
-
-
-	public static int[] countGroups(String experiment, int SequenceLength, int nrOfHits, Hashtable<String,String> T){
-
-		String resultDir = Functions.getValue(T, "-resultDir", ".");
-		String resultFile = Functions.getValue(T, "-resultFile", ".");
-		String DatabasesDir = Functions.getValue(T, "-DatabasesDir", resultDir);
-		String DatabasesFile = Functions.getValue(T, "-DatabasesFile", resultDir);
-
-		String[] chromosomes = null; 
-		String finalDir = resultDir+"/"+experiment+"/"+SequenceLength+"/";
-
-		String finalFile = experiment+"."+DatabasesFile+".rmapper."+nrOfHits; 
-		String extra = Functions.getValue(T, "-extra", "");
-
-		if(extra.length() > 1)
-			finalFile+="."+extra;
-		Databases C = new Databases("temp",DatabasesDir, DatabasesFile);
-		C.loadRmapperSequences(finalDir, finalFile);
-		C.mapSolidSequences();
-		return C.solidSequences.countGroups();
-	}
-
-
-
-
-	private void mapSolidSequences(){
-		for(int  i = 0 ; i < this.solidSequences.size(); i++){
-			Solid hit = this.solidSequences.get(i);
-			for(int j = 0; j < this.Databases2.size(); j++){
-				this.Databases2.get(j).mapSolidSequence2Database(hit);
-			}
-		}
-	}
-
-
+//
+//	private void loadSolidSequences(String dir, String file){
+//		this.solidSequences = new CfastaSequences();
+//		this.solidSequences.addSolidSequences(dir,file);
+//	}
+//
+//	private void loadRmapperSequences(String dir, String file){
+//		//System.out.print("reading rmapper files.......");
+//		this.solidSequences = new CfastaSequences();
+//		this.solidSequences.addRmapperSequences(dir,file);
+//		//System.out.println("finished");
+//		//this.solidSequences.countHits();
+//	}
+//
+//	private void removeNonredundantRmapperSequences(String dir, String file){
+//		this.solidSequences = new CfastaSequences();
+//		this.solidSequences.addRmapperSequences(dir,file);
+//
+//
+//
+//
+//	}
+//
+//
+//	public static int[] countGroups(String experiment, int SequenceLength, int nrOfHits, Hashtable<String,String> T){
+//
+//		String resultDir = Functions.getValue(T, "-resultDir", ".");
+//		String resultFile = Functions.getValue(T, "-resultFile", ".");
+//		String DatabasesDir = Functions.getValue(T, "-DatabasesDir", resultDir);
+//		String DatabasesFile = Functions.getValue(T, "-DatabasesFile", resultDir);
+//
+//		String[] chromosomes = null; 
+//		String finalDir = resultDir+"/"+experiment+"/"+SequenceLength+"/";
+//
+//		String finalFile = experiment+"."+DatabasesFile+".rmapper."+nrOfHits; 
+//		String extra = Functions.getValue(T, "-extra", "");
+//
+//		if(extra.length() > 1)
+//			finalFile+="."+extra;
+//		Databases C = new Databases("temp",DatabasesDir, DatabasesFile);
+//		C.loadRmapperSequences(finalDir, finalFile);
+//		C.mapSolidSequences();
+//		return C.solidSequences.countGroups();
+//	}
+//
+//
+//
+//
+//	private void mapSolidSequences(){
+//		for(int  i = 0 ; i < this.solidSequences.size(); i++){
+//			Solid hit = this.solidSequences.get(i);
+//			for(int j = 0; j < this.Databases2.size(); j++){
+//				this.Databases2.get(j).mapSolidSequence2Database(hit);
+//			}
+//		}
+//	}
+//
+//
 
 	private int getNrOfHits(){
 		int total = 0;
@@ -1039,16 +1041,16 @@ public class Databases implements Serializable{
 		return total;
 	}
 
-
-	private int getNrOfHits2(){
-		int total = 0;
-		return this.solidSequences.getNrOfHits();
-	}
-
-	private int getNrOfSequences(){
-		return this.solidSequences.size();
-	}
-
+//
+//	private int getNrOfHits2(){
+//		int total = 0;
+//		return this.solidSequences.getNrOfHits();
+//	}
+//
+//	private int getNrOfSequences(){
+//		return this.solidSequences.size();
+//	}
+//
 
 	private int countLocations(){
 		int total = 0;
@@ -1182,7 +1184,7 @@ public class Databases implements Serializable{
 
 	private void printVCFSample(String outDir,String resultFile,String sampleString, String inFile){
 
-		System.out.print("Writing the VCF sample to the 2"+resultFile+"........");
+		System.out.print("Writing the VCF sample to the 2 "+resultFile+"........");
 		try{
 			if(!IOTools.isDir(outDir))
 				IOTools.mkDir(outDir);
@@ -1534,7 +1536,7 @@ public class Databases implements Serializable{
 	}
 
 
-	public void loadVCFFile(String fileName){
+	public boolean loadVCFFile(String fileName){
 		//	0			1		2     3		  4			5		6		7		8		9				10			11			12				13				14				15				16		 
 		// #CHROM(0)  POS     ID     REF     ALT(0)     QUAL    FILTER  INFO    FORMAT  Cr1GR1-2-KS3    Cr_39_1 Inter3-1        Inter4-1        Inter5-1        Intra6-3        Intra7-2        Intra8-2
 		// scaffold_1      5       .       A       T       56.41   .       AC=3;AF=0.188;AN=16;BaseQRankSum=-1.804;DP=72;Dels=0.00;FS=0.000;HaplotypeScore=2.4206;MLEAC=2;MLEAF=0.125;MQ=26.05;MQ0=11;MQRankSum=0.618;QD=2.69;ReadPosRankSum=1.053 GT:AD:DP:GQ:PL  0|0:14,0:14:30:0,30,268 0|0:1,0:1:3:0,3,29      0/1:13,5:18:72:72,0,247 0|0:14,0:14:39:0,39,316 0|0:13,0:13:39:0,39,328 0|0:4,0:4:3:0,3,25      1|1:2,1:3:3:23,3,0      0|0:5,0:5:3:0,3,25
@@ -1581,7 +1583,9 @@ public class Databases implements Serializable{
 		}catch(Exception E){
 			E.printStackTrace();
 			System.out.println(info);
+			return false;
 		}
+		return true;
 	}
 
 	public void genotypemPileUpFile(String fileName, String sample, String father,String mother, String WhatCounts){
@@ -1616,7 +1620,7 @@ public class Databases implements Serializable{
 				}
 					
 				String DatabaseName = LineInfo[0].substring(0,LineInfo[0].indexOf(sep));
-				int count = Functions.countOccurrences(LineInfo[4], WhatCounts);
+				int count = Functions.countOccurrences(LineInfo[4], WhatCounts.toCharArray());
 				int location = Integer.decode(LineInfo[1]);
 				while(DatabasePointer < this.Databases2.size() && this.DatabaseOrder[DatabasePointer].compareTo(DatabaseName)!=0 ){
 					System.out.println("....Finished");
@@ -1993,10 +1997,10 @@ public class Databases implements Serializable{
 
 	}	
 
-	public void printHomozygousGenome(ExtendedWriter EW, String sample){
+	public void printHomozygousGenome(ExtendedWriter EW,ExtendedWriter EW2, String sample){
 		try{
 			for(int i = 0; i< this.Databases2.size();i++){
-				this.Databases2.get(this.DatabaseOrder[i]).printNNContig(EW,sample);
+				this.Databases2.get(this.DatabaseOrder[i]).printNNContig(EW,EW2, sample);
 				EW.println();
 			}
 		}catch(Exception E){E.printStackTrace();}

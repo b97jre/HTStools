@@ -60,14 +60,14 @@ public class chopUp{
 	public static void parseMirFile(String fileName){
 		try{
 			//generated_seq_freqs_generated_seq_6_dwn l=91nt penalty=6 dG=-20.97 (-0.230/nt) miR@20-41
-			int nrOfstructuresNotFound = 0;
+//			int nrOfstructuresNotFound = 0;
 			ExtendedReader PTTFileReader = new ExtendedReader(new FileReader(fileName));
 			while(PTTFileReader.more()){
 				String Sequence =  PTTFileReader.readLine();
-				if(Sequence.indexOf("no structure found")>0){
-					nrOfstructuresNotFound++;
-				}
-				else if(Sequence.indexOf("l=") > 0){
+//				if(Sequence.indexOf("no structure found")>0){
+//					nrOfstructuresNotFound++;
+//				}
+				if(Sequence.indexOf("l=") > 0){
 					//System.out.println(Sequence);	
 					String L = Sequence.substring(Sequence.indexOf("l=")+2,Sequence.indexOf("nt"));
 					String p = Sequence.substring(Sequence.indexOf("y=")+2,Sequence.indexOf(" dG"));
@@ -76,6 +76,7 @@ public class chopUp{
 					System.out.println(Name+"\t"+L+"\t"+p+"\t"+DG);	
 				}
 			}
+			PTTFileReader.close();
 		
 		}
 		catch(Exception E){E.printStackTrace();}
@@ -109,6 +110,7 @@ public class chopUp{
 			}
 			newFile.flush();
 			newFile.close();
+			PTTFileReader.close();
 		
 		}
 		catch(Exception E){E.printStackTrace();}

@@ -1,0 +1,3 @@
+Main-Class: Main.Main
+Class-Path: jars/extra.jar jars/jprogram.jar jars/xerces.jar jars/jcommon-1.0.12.jar jars/jfreechart-1.0.9.jar jars/flanagan.jar
+

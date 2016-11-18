@@ -2,8 +2,6 @@ package Infernal;
 
 import java.util.ArrayList;
 
-import general.ExtendedReader;
-import general.ExtendedWriter;
 
 public class CMresult {
 	protected String fastaFile;

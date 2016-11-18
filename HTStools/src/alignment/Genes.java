@@ -22,6 +22,8 @@ public class Genes extends ArrayList<Gene>  implements Serializable{
 		
 	}
 	
+	
+	
 	public int[] findGene(String GeneName){
 		int[] positions = null;
 		if(this.size() == 0) return null;

@@ -18,20 +18,16 @@ import alignment.mirfold;
 import Infernal.CMsearch;
 import MutationalAnalysis.MutationalAnalysis;
 import Ontologies.Ontology;
-import Sequence.CfastaSequences;
+import Sequence.SamCoverage;
 import Sequence.SequenceHandling;
 
 
 public class Main {
 	public static void main(String []args){
-		int length = args.length;
-		for (int i = 0; i < length; i++){
-			args[i] = args[i].trim();
-			System.out.print(args[i]+" ");
-		}
-		System.out.println();
 		Hashtable<String,String> T = Functions.parseCommandLine(args);
+		
 		String program = Functions.getValue(T, "-p", "HELP").toUpperCase();
+		
 		if(program.indexOf("HELP") == 0){
 			System.out.println("Following programs can be runned -p <option>");
 //			System.out.println("csfasta");
@@ -43,6 +39,12 @@ public class Main {
 			System.out.println("sequencehandling");
 			//SequenceHandling.run(T);
 			System.out.println("sbatch");
+			int length = args.length;
+			for (int i = 0; i < length; i++){
+				args[i] = args[i].trim();
+				System.out.print(args[i]+" ");
+			}
+			System.out.println();
 			
 		}
 
@@ -50,15 +52,16 @@ public class Main {
 			Blast.Blast.run(T);
 		}
 
-		if(program.indexOf("CSFASTA") == 0){
-			CfastaSequences.run(T);
+		if(program.indexOf("genomeCov".toUpperCase()) ==0 ){
+			SamCoverage.findCoverage(T);
+			return;
 		}
+	
 		if(program.indexOf("GENOME") == 0){
 			Genome.run(T);
 		}
 
 		if(program.indexOf("SEQUENCEHANDLING".toUpperCase()) == 0){
-			System.out.println("SequenceHandling");
 			SequenceHandling.run(T);
 		}
 		if(program.indexOf("tableParsing".toUpperCase()) == 0){
@@ -97,8 +100,9 @@ public class Main {
 
 		if(program.indexOf("ontology".toUpperCase()) ==0 ){
 			Ontology.run(T);
-			
 		}
+		
+		
 		
 		
 		if(program.indexOf("COMPAREDISTRIBUTION") == 0){
@@ -143,16 +147,6 @@ public class Main {
 			}
 		}
 		
-		else{
-			//sRNA pipeline setup
-			// Remove sequences that are found in longer libraries
-			
-			
-			
-			
-			
-			
-		}
 		
 /*		else if(program.indexOf("GENOME") == 0){
 			Genome.run(T);

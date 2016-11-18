@@ -226,7 +226,6 @@ public class Motif {
 		int pointer = 0;
 		int otherPointer = 0;
 		int closestDist = length;
-		boolean Dist = false;;
 		double bestScore = -16;
 		int bestDist = length;
 		for(int i = 0; i < this.hits.size();i++){
@@ -251,14 +250,12 @@ public class Motif {
 					pointer = i;
 					otherPointer = j;
 					bestScore = tempBitScore+otherBitScore+5;
-					Dist = true;
 					bestDist = dist;
 				}
 				else if(tempBitScore+otherBitScore-5 > bestScore){
 					pointer = i;
 					otherPointer = j;
 					bestScore = tempBitScore+otherBitScore-5;
-					Dist = false;
 					bestDist = dist;
 				}
 			}

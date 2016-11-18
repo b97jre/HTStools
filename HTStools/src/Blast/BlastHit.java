@@ -1,9 +1,6 @@
 package Blast;
 
-import alignment.Chromosome;
 import alignment.Gene;
-import Sequence.FastaSequences;
-import Sequence.Solid;
 import general.ExtendedWriter;
 
 public class BlastHit {

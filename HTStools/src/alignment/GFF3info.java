@@ -10,14 +10,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
 
-import Sequence.CfastaSequences;
-import Sequence.FastaSequence;
 import Sequence.FastaSequences;
-import Sequence.Solid;
 
 import general.ExtendedWriter;
 

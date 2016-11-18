@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
-import Sequence.CfastaSequences;
 
 import general.ExtendedReader;
 import general.ExtendedWriter;
@@ -45,14 +44,14 @@ public class mirfold {
 		miRNAs = mirfold.JoinmiRNAs(miRNAs);
 		System.out.println(miRNAs.size());
 
-		if(T.containsKey("-solidFile")){
-			String CDir = Functions.getValue(T, "-solidDir", Dir);
-			String CFile = Functions.getValue(T, "-solidFile", "you have to specify -solidFile");
-			CfastaSequences C1 = new CfastaSequences();
-			C1.addSolidSequences(CDir,CFile);
-			miRNAs = mirfold.JoinmiRNAs(miRNAs, C1);
-		}
-		
+//		if(T.containsKey("-solidFile")){
+//			String CDir = Functions.getValue(T, "-solidDir", Dir);
+//			String CFile = Functions.getValue(T, "-solidFile", "you have to specify -solidFile");
+//			CfastaSequences C1 = new CfastaSequences();
+//			C1.addSolidSequences(CDir,CFile);
+//			miRNAs = mirfold.JoinmiRNAs(miRNAs, C1);
+//		}
+//		
 		System.out.println(miRNAs.size());
 		String outDir = Functions.getValue(T, "-outDir", Dir);
 		String outFile = Functions.getValue(T, "-outFile", File+".best");
@@ -197,20 +196,20 @@ public class mirfold {
 		return miRNAs2;
 	}
 
-	public static ArrayList<mirfold> JoinmiRNAs(ArrayList<mirfold> miRNAs, CfastaSequences miRNASequences){
-		ArrayList<mirfold> miRNAs2 = new ArrayList<mirfold>();
-		for(int i = 0; i< miRNAs.size();i++){
-			int count = 0; 
-			for(int j = 0; j < miRNASequences.size(); j++){
-				if(miRNASequences.get(j).sameLocation(miRNAs.get(i).chromosome, miRNAs.get(i).location))
-					count++;
-			}
-			miRNAs.get(i).nrOfHits = count;
-			if(count != 0)
-				miRNAs2.add(miRNAs.get(i));
-		}
-		return miRNAs2;
-	}
+//	public static ArrayList<mirfold> JoinmiRNAs(ArrayList<mirfold> miRNAs, CfastaSequences miRNASequences){
+//		ArrayList<mirfold> miRNAs2 = new ArrayList<mirfold>();
+//		for(int i = 0; i< miRNAs.size();i++){
+//			int count = 0; 
+//			for(int j = 0; j < miRNASequences.size(); j++){
+//				if(miRNASequences.get(j).sameLocation(miRNAs.get(i).chromosome, miRNAs.get(i).location))
+//					count++;
+//			}
+//			miRNAs.get(i).nrOfHits = count;
+//			if(count != 0)
+//				miRNAs2.add(miRNAs.get(i));
+//		}
+//		return miRNAs2;
+//	}
 	
 	public static ArrayList<mirfold> selectBestmiRNA(ArrayList<mirfold> miRNAs){
 		for(int i = 0; i< miRNAs.size();i++){

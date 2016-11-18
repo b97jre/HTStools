@@ -13,7 +13,6 @@ import java.util.Hashtable;
 
 import Sequence.FastaSequences;
 import alignment.Gene;
-import alignment.Hit;
 
 public class Blast {
 
@@ -196,7 +195,7 @@ public class Blast {
 	private void getFastaNames(String dir, String fileName){
 		FastaSequences A = new FastaSequences();
 		A.getFastaFileNames(dir, fileName);
-		this.Genes = A.convertToHashTable();
+		this.Genes = Gene.convertToHashTable(A);
 	}
 
 
@@ -258,7 +257,6 @@ public class Blast {
 			ExtendedReader ER = new ExtendedReader(new FileReader(dir+"/"+inFile));
 			//trinity_4_1_1	trinity_4_1_1	100.00	79	0	0	1	79	1	79	1e-27	 118
 
-			int count = 1000000;
 			while(ER.more()){
 
 				String Line = ER.readLine();
@@ -304,6 +302,7 @@ public class Blast {
 
 				}	
 			}
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 	}	
@@ -314,7 +313,6 @@ public class Blast {
 			ExtendedReader ER = new ExtendedReader(new FileReader(dir+"/"+inFile));
 			//trinity_4_1_1	trinity_4_1_1	100.00	79	0	0	1	79	1	79	1e-27	 118
 
-			int count = 1000000;
 			while(ER.more()){
 
 				String Line = ER.readLine();
@@ -363,6 +361,7 @@ public class Blast {
 
 				}	
 			}
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 	}	
@@ -378,7 +377,8 @@ public class Blast {
 					DB.put(Line, A);
 				}
 			}			
-		}
+			ER.close();
+	}
 		catch(Exception E){E.printStackTrace();}
 	}	
 
@@ -438,7 +438,8 @@ public class Blast {
 					B.specificGene = Genes.get(hitName);
 				}
 			}			
-		}
+			ER.close();
+	}
 		catch(Exception E){E.printStackTrace();}
 	}	
 
@@ -487,6 +488,7 @@ public class Blast {
 					}
 				}
 			}			
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 	}	
@@ -538,6 +540,7 @@ public class Blast {
 					}
 				}
 			}			
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 	}	
@@ -588,6 +591,7 @@ public class Blast {
 					}
 				}
 			}			
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 	}	
@@ -641,48 +645,49 @@ public class Blast {
 					System.out.println();				
 				}
 			}			
+			ER.close();
 		}
 		catch(Exception E){E.printStackTrace();}
 		return Genes;
 	}	
 
 
-
-	private void addHitsBlastFile(String dir, String inFile ){
-		try{
-			ExtendedReader ER = new ExtendedReader(new FileReader(dir+"/"+inFile));
-			//trinity_4_1_1	trinity_4_1_1	100.00	79	0	0	1	79	1	79	1e-27	 118
-
-
-			while(ER.more()){
-
-				String Line = ER.readLine();
-				String[] info = Line.split("\t");
-
-				String	queryName = info[0];
-				String hitName = info[1];
-				double similarity = Double.parseDouble(info[2]);
-				int length = Integer.parseInt(info[3]);
-				int missmatches = Integer.parseInt(info[4]);
-				int gaps = Integer.parseInt(info[5]);
-				int queryStart = Integer.parseInt(info[6]);
-				int queryStop = Integer.parseInt(info[7]);
-				int hitStart = Integer.parseInt(info[8]);
-				int hitStop = Integer.parseInt(info[9]);
-				double Evalue = Double.parseDouble(info[10]);
-				double score = Double.parseDouble(info[11]);
-
-				BlastHit B = new BlastHit(queryName,hitName,similarity,length,
-						missmatches,gaps,queryStart,queryStop,hitStart,hitStop,Evalue, score);
-				Gene A = null;
-				if(Genes.containsKey(queryName)){
-					A = Genes.get(queryName);
-					A.addBlastHit(B);
-				}
-			}			
-		}
-		catch(Exception E){E.printStackTrace();}
-	}	
+//
+//	private void addHitsBlastFile(String dir, String inFile ){
+//		try{
+//			ExtendedReader ER = new ExtendedReader(new FileReader(dir+"/"+inFile));
+//			//trinity_4_1_1	trinity_4_1_1	100.00	79	0	0	1	79	1	79	1e-27	 118
+//
+//
+//			while(ER.more()){
+//
+//				String Line = ER.readLine();
+//				String[] info = Line.split("\t");
+//
+//				String	queryName = info[0];
+//				String hitName = info[1];
+//				double similarity = Double.parseDouble(info[2]);
+//				int length = Integer.parseInt(info[3]);
+//				int missmatches = Integer.parseInt(info[4]);
+//				int gaps = Integer.parseInt(info[5]);
+//				int queryStart = Integer.parseInt(info[6]);
+//				int queryStop = Integer.parseInt(info[7]);
+//				int hitStart = Integer.parseInt(info[8]);
+//				int hitStop = Integer.parseInt(info[9]);
+//				double Evalue = Double.parseDouble(info[10]);
+//				double score = Double.parseDouble(info[11]);
+//
+//				BlastHit B = new BlastHit(queryName,hitName,similarity,length,
+//						missmatches,gaps,queryStart,queryStop,hitStart,hitStop,Evalue, score);
+//				Gene A = null;
+//				if(Genes.containsKey(queryName)){
+//					A = Genes.get(queryName);
+//					A.addBlastHit(B);
+//				}
+//			}			
+//		}
+//		catch(Exception E){E.printStackTrace();}
+//	}	
 
 	public void removeAllhits(){
 		for (Enumeration<String> e = Genes.keys(); e.hasMoreElements();){
@@ -799,7 +804,6 @@ public class Blast {
 	public void checkDependencies(){
 		try{
 			//ExtendedWriter EW = new ExtendedWriter(new FileWriter(outFile));
-			int count = 0; 
 			for (Enumeration<String> e = Genes.keys(); e.hasMoreElements();){
 				Genes.get(e.nextElement()).checkDependencies(Genes);
 			}

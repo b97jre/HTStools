@@ -1,24 +1,15 @@
 package alignment;
 
 import general.Functions;
-import general.IOTools;
 import general.RNAfunctions;
-import general.energy;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
 import Sequence.FastaSequence;
-import Sequence.Solid;
 
-import sun.tools.tree.ThisExpression;
 import general.ExtendedReader;
 import general.ExtendedWriter;
 
@@ -46,6 +37,28 @@ public class Contig implements Serializable{
 	
 	protected ArrayList <Hit> hits;
 
+	
+	
+	
+	Contig(String Name, FastaSequence FS){
+		this.Name = this.ID = Name;  
+		this.seq = FS;
+		this.ncRNAs  = new ArrayList <Gene>(); 
+		this.codingGenes = new ArrayList<Gene>();
+	} 
+	
+	Contig(String Genomedir, String fileName,String Name){
+		this.setName(Name);
+		this.codingGenes = new ArrayList<Gene>();
+		//printGenes();
+		
+	}
+
+	Contig(String Name){
+		this.setName(Name);
+		codingGenes = new ArrayList <Gene>(); 
+		
+	}
 
 		
 	public static void main(String[] args) {
@@ -68,18 +81,6 @@ public class Contig implements Serializable{
 			
 	}	
 	
-	Contig(String Genomedir, String fileName,String Name){
-		this.setName(Name);
-		this.codingGenes = new ArrayList<Gene>();
-		//printGenes();
-		
-	}
-
-	Contig(String Name){
-		this.setName(Name);
-		codingGenes = new ArrayList <Gene>(); 
-		
-	}
 
 
 	public void sortGenes(){
@@ -119,6 +120,19 @@ public class Contig implements Serializable{
 	public void printORFNames(ExtendedWriter EW){
 		for(int i = 0; i < this.codingGenes.size();i++){
 			this.codingGenes.get(i).getFastaSeq().printName(EW);
+		}
+	}
+	
+	
+	public void printUpstreamRegion(ExtendedWriter EW,int upstreamLength){
+		for(int i = 0; i < this.codingGenes.size();i++){
+			this.codingGenes.get(i).getFastaSeq().printFasta(EW);
+		}
+	}
+	
+	public void printUpstream_5UTR_FirstIntron_Sequence(ExtendedWriter EW,int upstreamLength){
+		for(int i = 0; i < this.codingGenes.size();i++){
+			this.codingGenes.get(i).printUpstream_5UTR_FirstIntron_Sequence(EW,this.seq.getSequence(), upstreamLength);
 		}
 	}
 	
@@ -234,7 +248,7 @@ public class Contig implements Serializable{
 		int pointer = 0;
 		int[] sequence = new int[this.getLength()];
 		ER.skipLine();
-//		System.out.println("LŠser in kromosom sekvensen");
+//		System.out.println("Lï¿½ser in kromosom sekvensen");
 		while(ER.more()){
 			int[] subSequence = RNAfunctions.RNAString2Int(ER.readLine());
 			for(int i = 0; i < subSequence.length;i++){
@@ -250,24 +264,24 @@ public class Contig implements Serializable{
 	}
 	
 	
-	public void mapSolidSequence(Solid hit){
-		for(int i = 0; i < hit.hits.size(); i++){
-			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
-				hit.hits.get(i).specificGene = this.getKind(hit.hits.get(i));
-			}
-		}
-	}
-
-	
-	public void mapSolidSequenceChromosome(Solid hit){
-		for(int i = 0; i < hit.hits.size(); i++){
-			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
-				this.addHit(hit.hits.get(i));
-			}
-		}
-		
-		
-	}
+//	public void mapSolidSequence(Solid hit){
+//		for(int i = 0; i < hit.hits.size(); i++){
+//			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
+//				hit.hits.get(i).specificGene = this.getKind(hit.hits.get(i));
+//			}
+//		}
+//	}
+//
+//	
+//	public void mapSolidSequenceChromosome(Solid hit){
+//		for(int i = 0; i < hit.hits.size(); i++){
+//			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
+//				this.addHit(hit.hits.get(i));
+//			}
+//		}
+//		
+//		
+//	}
 	
 	
 	public void addHit(Hit newHit){
@@ -319,14 +333,14 @@ public class Contig implements Serializable{
 		this.hits = newHits;
 		}
 	}
-	
-	public void printHits(ExtendedWriter EW){
-		if(this.hits != null){
-		for(int i = 0; i < this.hits.size();i++){
-			this.hits.get(i).printHit(EW);
-		}
-		}
-	}
+//	
+//	public void printHits(ExtendedWriter EW){
+//		if(this.hits != null){
+//		for(int i = 0; i < this.hits.size();i++){
+//			this.hits.get(i).printHit(EW);
+//		}
+//		}
+//	}
 
 	private void findRedundancy(){
 		if(this.hits != null){
@@ -530,34 +544,6 @@ public class Contig implements Serializable{
 	}
 	
 	
-	public void printSolidSequence(Solid hit, ExtendedWriter EW){
-		int USlength = 300;
-		for(int i = 0; i < hit.hits.size(); i++){
-			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
-				int start = hit.hits.get(i).start;
-				int length = hit.hits.get(i).length;
-				int[] surrSequence = null;
-				if(start > 0 ){
-					int seqStart = start-USlength;
-					int seqEnd = start+length+USlength;
-					if(seqStart < 0)seqStart = 0;
-					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
-					surrSequence = Functions.getSubarray(this.sequence, seqStart, seqEnd);
-				}
-				else{
-					int seqStart = this.length+start-length-USlength;
-					int seqEnd = this.length+start+USlength;
-					if(seqStart < 0)seqStart = 0;
-					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
-					surrSequence = RNAfunctions.getComplementary(
-							Functions.getSubarray(this.sequence, seqStart, seqEnd));
-				}
-				EW.println(hit.getFastaHitInfo(i)+"_"+USlength+"_nt_upstreamAndDownstream");
-				EW.println(RNAfunctions.RNAInt2String(surrSequence));
-			}
-		}
-	}
-	
 	
 	
 	public void printDistributionSolidSequence(ExtendedWriter EW){
@@ -584,58 +570,58 @@ public class Contig implements Serializable{
 			}
 		}
 	}
-
-	public void printHits(String dir, String file){
-		if(!IOTools.isDir(dir+"/ncRNAs"))
-			IOTools.mkDir(dir+"/ncRNAs");
-		for(int i = 0; i < this.ncRNAs.size(); i++){
-			if(this.ncRNAs.get(i).getNrOfHits() > 0 ){
-				if(!this.ncRNAs.get(i).printpremiRNAstructures(dir+"/ncRNAs", file)){
-					this.ncRNAs.remove(i);
-					i--;
-					
-				}
-			}
-		}
-		if(!IOTools.isDir(dir+"/repeats"))
-			IOTools.mkDir(dir+"/repeats");
-		for(int i = 0; i < this.repeats.size(); i++){
-			if(this.repeats.get(i).getNrOfHits() > 0 ){
-				if(!this.repeats.get(i).printpremiRNAstructures(dir+"/repeats", file)){
-					this.repeats.remove(i);
-					i--;
-				}
-			}
-		}
-		
-		if(!IOTools.isDir(dir+"/intergenic"))
-			IOTools.mkDir(dir+"/intergenic");
-		for(int i = 0; i < this.intergenicRegions.size(); i++){
-			if(this.intergenicRegions.get(i).getNrOfHits() > 0 ){
-				if(!this.intergenicRegions.get(i).printpremiRNAstructures(dir+"/intergenic", file)){
-					this.intergenicRegions.remove(i);
-					i--;
-				}
-			}
-		}
-		
-		if(!IOTools.isDir(dir+"/coding"))
-			IOTools.mkDir(dir+"/coding");
-		for(int i = 0; i < this.codingGenes.size(); i++){
-			if(this.codingGenes.get(i).getNrOfHits() > 0 ){
-				if(!this.codingGenes.get(i).printpremiRNAstructures(dir+"/coding", file)){
-					this.codingGenes.remove(i);
-					i--;
-				}
-			}
-		}
-	}
-	
-
-	
-	
-	
-	
+//
+//	public void printHits(String dir, String file){
+//		if(!IOTools.isDir(dir+"/ncRNAs"))
+//			IOTools.mkDir(dir+"/ncRNAs");
+//		for(int i = 0; i < this.ncRNAs.size(); i++){
+//			if(this.ncRNAs.get(i).getNrOfHits() > 0 ){
+//				if(!this.ncRNAs.get(i).printpremiRNAstructures(dir+"/ncRNAs", file)){
+//					this.ncRNAs.remove(i);
+//					i--;
+//					
+//				}
+//			}
+//		}
+//		if(!IOTools.isDir(dir+"/repeats"))
+//			IOTools.mkDir(dir+"/repeats");
+//		for(int i = 0; i < this.repeats.size(); i++){
+//			if(this.repeats.get(i).getNrOfHits() > 0 ){
+//				if(!this.repeats.get(i).printpremiRNAstructures(dir+"/repeats", file)){
+//					this.repeats.remove(i);
+//					i--;
+//				}
+//			}
+//		}
+//		
+//		if(!IOTools.isDir(dir+"/intergenic"))
+//			IOTools.mkDir(dir+"/intergenic");
+//		for(int i = 0; i < this.intergenicRegions.size(); i++){
+//			if(this.intergenicRegions.get(i).getNrOfHits() > 0 ){
+//				if(!this.intergenicRegions.get(i).printpremiRNAstructures(dir+"/intergenic", file)){
+//					this.intergenicRegions.remove(i);
+//					i--;
+//				}
+//			}
+//		}
+//		
+//		if(!IOTools.isDir(dir+"/coding"))
+//			IOTools.mkDir(dir+"/coding");
+//		for(int i = 0; i < this.codingGenes.size(); i++){
+//			if(this.codingGenes.get(i).getNrOfHits() > 0 ){
+//				if(!this.codingGenes.get(i).printpremiRNAstructures(dir+"/coding", file)){
+//					this.codingGenes.remove(i);
+//					i--;
+//				}
+//			}
+//		}
+//	}
+//	
+//
+//	
+//	
+//	
+//	
 	
 	
 	private Gene getKind(Hit newHit){
@@ -762,6 +748,19 @@ public class Contig implements Serializable{
 			System.out.println(GFF3line);
 	}
 
+	
+	public void addInfo(String[] columns){
+		if(columns[2].indexOf("gene") == 0)addGene(columns);
+		else if(columns[2].indexOf("mRNA") == 0)addmRNA(columns);
+		else if(columns[2].indexOf("five_prime_UTR") == 0)add5UTR(columns);
+		else if(columns[2].indexOf("three_prime_UTR") == 0)add3UTR(columns);
+		else if(columns[2].indexOf("CDS") == 0)addCDS(columns);
+		else if(columns[2].indexOf("exon") == 0)addExon(columns);
+		else if(columns[2].indexOf("chromosome") == 0)getChromosomeInfo(columns);
+		else if(columns[2].indexOf("dr") ==0)addNCRNA(columns);
+		else if(columns[2].indexOf("Dictyostelium discoideum complex repeat") > 0)addRepeat(columns);
+	}
+	
 	private void getChromosomeInfo(String[] columns){
 		int left = Integer.parseInt(columns[3]);
 		int right = Integer.parseInt(columns[4]);
@@ -923,18 +922,66 @@ public class Contig implements Serializable{
 			System.out.println();
 		}
 		return false;
-		
 	}
 
+	private boolean add5UTR(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		String parent = GFF3info.getExtraInfo(columns[8],"Parent");
+		
+		if(parent != null){
+			
+			FUTR newFUTR = new FUTR(left, right,parent);
+			
+			for(int i = this.codingGenes.size()-1;i > -1; i--){
+				if(this.codingGenes.get(i).add5UTR(newFUTR,parent)){
+					return true;
+				}
+			}
+		}
+		else{
+			System.out.println("Something wrong when adding 5UTR!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+		return false;
+	}
+	
+	
+	private boolean add3UTR(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		String parent = GFF3info.getExtraInfo(columns[8],"Parent");
+		
+		if(parent != null){
+			
+			TUTR newTUTR = new TUTR(left, right,parent);
+			
+			for(int i = this.codingGenes.size()-1;i > -1; i--){
+				if(this.codingGenes.get(i).add3UTR(newTUTR,parent)){
+					return true;
+				}
+			}
+		}
+		else{
+			System.out.println("Something wrong when adding 5UTR!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+		return false;
+		
+	}
+	
+	
 	private boolean addExon(String[] columns){
 		int left = Integer.parseInt(columns[3]);
 		int right = Integer.parseInt(columns[4]);
-		String parent = "wrong";
-		if(columns[8].indexOf("Parent=") == 0){
-				String[] IDs = columns[8].split("=");
-				parent = IDs[1];
-		}
-		if(parent.indexOf("wrong")==-1){
+		String parent = GFF3info.getExtraInfo(columns[8],"Parent");
+		if(parent != null){
 			Exon newExon = new Exon(left, right, parent);
 			codingGenes.trimToSize();
 			for(int i = this.codingGenes.size()-1;i > -1; i--){
@@ -964,6 +1011,41 @@ public class Contig implements Serializable{
 		
 	}
 
+	private boolean addCDS(String[] columns){
+		int left = Integer.parseInt(columns[3]);
+		int right = Integer.parseInt(columns[4]);
+		String parent = GFF3info.getExtraInfo(columns[8],"Parent");
+		if(parent != null){
+			CDS newExon = new CDS(left, right, parent);
+			codingGenes.trimToSize();
+			for(int i = this.codingGenes.size()-1;i > -1; i--){
+				CodingGene temp = (CodingGene)this.codingGenes.get(i);
+				if(temp.addCDS(newExon,parent)){
+					this.codingGenes.remove(i);
+					this.codingGenes.add(i,temp);
+					return true;
+				}
+			}
+		}
+		else{
+			System.out.println("Something wrong when adding gene!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		}
+/*			System.out.println("Something wrong when adding exon!");
+			for(int i = 0; i < columns.length; i++){
+				System.out.print(columns[i]+"\t");
+			}
+			System.out.println();
+		
+*/
+		return false;
+		
+	}
+	
+	
 	public void setName(String name) {
 		Name = name;
 	}

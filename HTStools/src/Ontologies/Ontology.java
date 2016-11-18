@@ -63,7 +63,7 @@ public class Ontology {
 	private void getFastaNames(String dir, String fileName){
 		FastaSequences A = new FastaSequences();
 		A.getFastaFileNames(dir, fileName);
-		this.Genes = A.convertToHashTable();
+		this.Genes = Gene.convertToHashTable(A);
 	}
 
 

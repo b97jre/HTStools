@@ -5,13 +5,9 @@ import general.IOTools;
 
 import java.io.FileWriter;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Hashtable;
 
-import Sequence.CfastaSequences;
-import Sequence.FastaSequence;
 import Sequence.FastaSequences;
-import Sequence.Solid;
 
 import general.ExtendedWriter;
 
@@ -229,18 +225,18 @@ public class Contigs implements Serializable{
 		}
 	}
 
-	private void printChromosomalHits2(String Dir, String file){
-		try{
-			ExtendedWriter EW = new ExtendedWriter(new FileWriter(Dir+"/"+file));
-			for(int j = 0; j < this.Chromosomes.size(); j++){
-				this.Chromosomes.get(j).printHits(EW);
-			}
-			EW.flush();
-			EW.close();
-		}
-		catch(Exception E){E.printStackTrace();}
-	}
-
+//	private void printChromosomalHits2(String Dir, String file){
+//		try{
+//			ExtendedWriter EW = new ExtendedWriter(new FileWriter(Dir+"/"+file));
+//			for(int j = 0; j < this.Chromosomes.size(); j++){
+//				this.Chromosomes.get(j).printHits(EW);
+//			}
+//			EW.flush();
+//			EW.close();
+//		}
+//		catch(Exception E){E.printStackTrace();}
+//	}
+//
 
 	private int getNrOfHits(){
 		int total = 0;
@@ -294,17 +290,17 @@ public class Contigs implements Serializable{
 	}
 
 
-	private void printChromosomalHits(String dir,String file){
-		try{
-
-			for(int j = 0; j < this.Chromosomes.size(); j++){
-				if(!IOTools.isDir(dir+"/"+this.Chromosomes.get(j).getName()))
-					IOTools.mkDir(dir+"/"+this.Chromosomes.get(j).getName());
-				this.Chromosomes.get(j).printHits(dir+"/"+this.Chromosomes.get(j).getName(),file);
-			}
-		}catch(Exception E){E.printStackTrace();}
-	}
-
+//	private void printChromosomalHits(String dir,String file){
+//		try{
+//
+//			for(int j = 0; j < this.Chromosomes.size(); j++){
+//				if(!IOTools.isDir(dir+"/"+this.Chromosomes.get(j).getName()))
+//					IOTools.mkDir(dir+"/"+this.Chromosomes.get(j).getName());
+//				this.Chromosomes.get(j).printHits(dir+"/"+this.Chromosomes.get(j).getName(),file);
+//			}
+//		}catch(Exception E){E.printStackTrace();}
+//	}
+//
 	private static void printDistributionOfHits(String dir,String file,String[] experiments, int[][] distribution){
 		try{
 			ExtendedWriter EW = new ExtendedWriter(new FileWriter(dir+"/"+file+".distribution.csv"));

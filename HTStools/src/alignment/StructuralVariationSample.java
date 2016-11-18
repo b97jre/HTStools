@@ -71,7 +71,7 @@ public class StructuralVariationSample {
 		// 0|1:23,13:36:99:181,0,446:692.21 	(phased)
 		// ./. 									(Not present)
 		this.info = info;
-		if(info.compareTo("./.")== 0){
+		if(info.startsWith("./.")){
 			notPresent = true;
 		}
 		else{

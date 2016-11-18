@@ -1,7 +1,6 @@
 package alignment;
 
 import Sequence.FastaSequences;
-import Sequence.Solid;
 import general.ExtendedWriter;
 
 public class Hit {
@@ -13,7 +12,6 @@ public class Hit {
 	protected int kind;
 	protected String readSeaq;
 	protected Gene specificGene;
-	public Solid solidSequence;
 	public int score;
 	protected int contigend;// = Integer.parseInt(info[4]);      //		25
 	protected int readstart;//  = Integer.parseInt(info[5]);     // 		24
@@ -74,15 +72,6 @@ public class Hit {
 	
 	}
 	
-	public Hit(int start, int length, boolean plusStrand, String chromosome,String readSeq, int score, Solid SolidSequence){
-		this.start = start;
-		this.length = length;
-		this.plusStrand = plusStrand;
-		this.chromosome = chromosome;
-		this.readSeaq = readSeq;
-		this.score = score;
-		this.solidSequence = SolidSequence;
-	}
 
 	
 	public Hit(String chromosome, boolean plusStrand,int start, int contigend,int readStart, int readEnd,
@@ -118,51 +107,9 @@ public class Hit {
 					);
 	}
 	
-	public void printHit(ExtendedWriter EW){
-		//#FORMAT: readname contigname strand contigstart contigend readstart readend readlength score editstring readsequence
-		//>856_759_1307_F3        adaptor + bc1 + P2      +       1       25      15      39      50      208     x18x2x5 A22301003111312033020103031311231101032002322003120
-		String strand = "+";
-		if(!plusStrand) strand = "-";
-			EW.print(this.solidSequence.Name+
-					"\t"+this.chromosome+
-					"\t"+strand+
-					"\t"+this.start+
-					"\t"+this.contigend+
-					"\t"+this.readstart+
-					"\t"+this.readend+
-					"\t"+this.length+
-					"\t"+this.score+
-					"\t"+this.readSeaq
-			);
-			if(this.solidSequence.Sequence != null)
-				EW.println("\t"+this.solidSequence.Sequence);
-			else
-				EW.println();
-	}
 	
 	
 
-	
-	
-	
-	public void printHitOLD(ExtendedWriter EW){
-		if(this.plusStrand)
-			EW.println(
-				this.solidSequence.Name+"\t"+
-				"+\t"+
-				this.start+"\t"+
-				this.length+"\t"+
-				this.score+"\t"+
-				this.readSeaq);		
-		else
-			EW.println(
-					this.solidSequence.Name+"\t"+
-					"-\t"+
-					this.start+"\t"+
-					this.length+"\t"+
-					this.score+"\t"+
-					this.readSeaq);		
-	}
 	
 	
 	public void printSurrounding(Chromosome C, int cutoff, int width, String GeneName, ExtendedWriter EW){

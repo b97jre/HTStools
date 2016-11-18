@@ -16,6 +16,7 @@ import Ontologies.GOGene;
 import Ontologies.GeneOntology;
 import Ontologies.PantherGene;
 import Sequence.FastaSequence;
+import Sequence.FastaSequences;
 
 
 public class Gene extends Object implements Serializable {
@@ -152,8 +153,39 @@ public class Gene extends Object implements Serializable {
 	public void printPersonalmRNAInfo( String ContigName,Hashtable <Integer,
 			StructuralVariation> SVs, ArrayList<Integer> SVorder, String sample,ExtendedWriter info){
 	}
-	
+	public boolean add5UTR(FUTR newExon, String parent){
+		return false;
+	}
 
+
+	public boolean addCDS(CDS newExon,String parent){
+		return false;
+	}
+
+	public boolean add3UTR(TUTR newExon, String parent){
+		return false;
+	}
+
+
+	
+	public static Hashtable<String, Gene> convertToHashTable(FastaSequences FS){
+		Hashtable<String, Gene> HT = new Hashtable<String, Gene>();
+		//System.out.println(this.size());
+		for(int i = 0; i< FS.size(); i++){
+			String Name = FS.get(i).getName();
+			if(Name.indexOf(" ") >-1)
+				Name = FS.get(i).getName().split(" ")[0];
+			//			System.out.println(Name);
+			Gene A = new Gene(Name);
+			A.length = FS.get(i).length;
+			HT.put(Name, A);
+			//System.out.println(Name);
+		}
+
+		return HT;
+	}
+	
+	
 	public int[] getNumberOfHeterozygousSites(Hashtable <Integer,
 			StructuralVariation> SVs,ArrayList<Integer> SVorder, ArrayList<String> samples, int startPointer){
 		while(startPointer < SVorder.size() && SVorder.get(startPointer)< this.left) startPointer++;
@@ -820,31 +852,31 @@ public class Gene extends Object implements Serializable {
 
 
 
-	public boolean printpremiRNAstructures(String Dir, String file){
-		if(hits != null && isAboveCutoff(1.0,5)){
-
-			try{
-				ExtendedWriter EW = null;
-				if(this.plusStrand == true)
-					EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"_+."+file+".hits"));
-				else
-					EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"_-."+file+".hits"));
-				for(int i = 0; i < this.hits.size();i++){
-					this.hits.get(i).printHit(EW);
-				}
-				EW.flush();
-				EW.close();
-				removeDuplicates();
-				if(this.hits.size() < 30)
-					return true;
-			}
-			catch(Exception E){
-				E.printStackTrace(); 
-			}
-		}
-
-		return false;
-	}
+//	public boolean printpremiRNAstructures(String Dir, String file){
+//		if(hits != null && isAboveCutoff(1.0,5)){
+//
+//			try{
+//				ExtendedWriter EW = null;
+//				if(this.plusStrand == true)
+//					EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"_+."+file+".hits"));
+//				else
+//					EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"_-."+file+".hits"));
+//				for(int i = 0; i < this.hits.size();i++){
+//					this.hits.get(i).printHit(EW);
+//				}
+//				EW.flush();
+//				EW.close();
+//				removeDuplicates();
+//				if(this.hits.size() < 30)
+//					return true;
+//			}
+//			catch(Exception E){
+//				E.printStackTrace(); 
+//			}
+//		}
+//
+//		return false;
+//	}
 
 	public void printSurrounding(Chromosome C, ExtendedWriter EW, int surrounding){
 		for(int i = 0; i < this.hits.size();i++){
@@ -948,46 +980,46 @@ public class Gene extends Object implements Serializable {
 
 
 
-
-	public void printHits(String Dir, String file){
-		if(hits != null){
-			int sense = 0; 
-			int antisense = 0;
-			double weightedSense = 0;
-			double weightedAntisense = 0;
-			for(int i =0 ; i < hits.size(); i++){
-				if(this.plusStrand != hits.get(i).plusStrand){
-					antisense++;
-					weightedAntisense += hits.get(i).getWeightedHit();
-				}
-				else{
-					sense++;
-					weightedSense += hits.get(i).getWeightedHit();
-				}
-			}
-			double w1 = weightedSense;
-			double w2 = weightedAntisense;
-			if(weightedSense < 2) w1 = 2;
-			if(weightedAntisense < 2) w2 = 2;
-			double difference = java.lang.Math.abs(java.lang.Math.log10(w1/w2));
-			if(difference > 0.5  && ( weightedSense > 50 || weightedAntisense > 50)){
-				try{
-					ExtendedWriter EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"."+file+".hits"));
-					for(int i = 0; i < this.hits.size();i++){
-						this.hits.get(i).printHit(EW);
-					}
-					EW.flush();
-					EW.close();
-
-				}
-				catch(Exception E){
-					E.printStackTrace(); 
-				}
-			}
-		}
-	}
-
-
+//
+//	public void printHits(String Dir, String file){
+//		if(hits != null){
+//			int sense = 0; 
+//			int antisense = 0;
+//			double weightedSense = 0;
+//			double weightedAntisense = 0;
+//			for(int i =0 ; i < hits.size(); i++){
+//				if(this.plusStrand != hits.get(i).plusStrand){
+//					antisense++;
+//					weightedAntisense += hits.get(i).getWeightedHit();
+//				}
+//				else{
+//					sense++;
+//					weightedSense += hits.get(i).getWeightedHit();
+//				}
+//			}
+//			double w1 = weightedSense;
+//			double w2 = weightedAntisense;
+//			if(weightedSense < 2) w1 = 2;
+//			if(weightedAntisense < 2) w2 = 2;
+//			double difference = java.lang.Math.abs(java.lang.Math.log10(w1/w2));
+//			if(difference > 0.5  && ( weightedSense > 50 || weightedAntisense > 50)){
+//				try{
+//					ExtendedWriter EW = new ExtendedWriter(new FileWriter(Dir+"/"+this.Name+"."+file+".hits"));
+//					for(int i = 0; i < this.hits.size();i++){
+//						this.hits.get(i).printHit(EW);
+//					}
+//					EW.flush();
+//					EW.close();
+//
+//				}
+//				catch(Exception E){
+//					E.printStackTrace(); 
+//				}
+//			}
+//		}
+//	}
+//
+//
 
 
 
@@ -1067,6 +1099,17 @@ public class Gene extends Object implements Serializable {
 		return fastaSeq;
 	}
 
+	public FastaSequence getUpstreamSeq(int length) {
+		return null;
+	}
+	
+	public void  printUpstream_5UTR_FirstIntron_Sequence(ExtendedWriter EW,int[] sequence, int length){
+	}
+	
+	
+	
+	
+	
 	public void setFastaSeq(FastaSequence fastaSeq) {
 		this.fastaSeq = fastaSeq;
 	}

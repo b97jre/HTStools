@@ -3,15 +3,11 @@ package alignment;
 import general.Functions;
 import general.RNAfunctions;
 
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
-
-import Sequence.Solid;
 
 import general.ExtendedReader;
 import general.ExtendedWriter;
@@ -324,14 +320,14 @@ public class Database implements Serializable{
 		}
 	}
 
-
-	public void mapSolidSequence2Database(Solid hit){
-		for(int i = 0; i < hit.hits.size(); i++){
-			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
-				this.addHit(hit.hits.get(i));
-			}
-		}
-	}
+//
+//	public void mapSolidSequence2Database(Solid hit){
+//		for(int i = 0; i < hit.hits.size(); i++){
+//			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
+//				this.addHit(hit.hits.get(i));
+//			}
+//		}
+//	}
 
 
 	public void addHit(Hit newHit){
@@ -352,7 +348,7 @@ public class Database implements Serializable{
 			this.SVs = new Hashtable<Integer,StructuralVariation>();
 		}
 		Integer Location = Integer.decode(VCFinfo[1]);
-		if(VCFinfo[5].compareTo(".")!=0)
+		if(VCFinfo[5].compareTo(".")!=0 && VCFinfo[4].compareTo(".") != 0 )
 			this.SVs.put(Location, new StructuralVariation(Samples,VCFinfo));
 	}
 
@@ -571,9 +567,6 @@ public class Database implements Serializable{
 				SVs.get(sortedKeys.get(i)).addPhase(SVs.get(sortedKeys.get(i-1)),readPhased);
 			}
 		}
-
-
-
 	}
 
 
@@ -798,7 +791,7 @@ public class Database implements Serializable{
 
 
 
-	public void printNNContig(ExtendedWriter EW,String sample){
+	public void printNNContig(ExtendedWriter EW,ExtendedWriter EW2,String sample){
 		List<Integer> sortedKeys = null;
 		if(SVs != null){
 			sortedKeys=new ArrayList<Integer>(SVs.keySet());
@@ -813,10 +806,14 @@ public class Database implements Serializable{
 				EW.println();
 			}
 			if(sortedKeys != null &&pointer < sortedKeys.size() && sortedKeys.get(pointer) == i+1){
+				EW2.print(i+1 +"\t");
 				char[] SNP = this.SVs.get(sortedKeys.get(pointer)).getNNSNP(EW, sample);
 				for(int j = 0; j < SNP.length; j++){
 					EW.print(SNP[j]);
+					EW2.print(SNP[j]);
 				}
+				pointer++;
+				EW2.println();
 			}else
 				EW.print(RNAfunctions.DNAInt2char(this.sequence[i]));
 		}
@@ -1261,31 +1258,31 @@ public class Database implements Serializable{
 			this.hits = newHits;
 		}
 	}
-
-	public void printHits(ExtendedWriter EW){
-		if(this.hits != null){
-			for(int i = 0; i < this.hits.size();i++){
-				this.hits.get(i).printHit(EW);
-			}
-		}
-	}
-
-
-	public boolean printHits(String Dir, String file){
-		try{
-			ExtendedWriter EW = null;
-			EW = new ExtendedWriter(new FileWriter(Dir+"/"+file+"."+this.Name+".rmapper"));
-			for(int i = 0; i < this.hits.size();i++){
-				this.hits.get(i).printHit(EW);
-			}
-			EW.flush();
-			EW.close();
-		}
-		catch(Exception E){
-			E.printStackTrace(); 
-		}
-		return false;
-	}
+//
+//	public void printHits(ExtendedWriter EW){
+//		if(this.hits != null){
+//			for(int i = 0; i < this.hits.size();i++){
+//				this.hits.get(i).printHit(EW);
+//			}
+//		}
+//	}
+//
+//
+//	public boolean printHits(String Dir, String file){
+//		try{
+//			ExtendedWriter EW = null;
+//			EW = new ExtendedWriter(new FileWriter(Dir+"/"+file+"."+this.Name+".rmapper"));
+//			for(int i = 0; i < this.hits.size();i++){
+//				this.hits.get(i).printHit(EW);
+//			}
+//			EW.flush();
+//			EW.close();
+//		}
+//		catch(Exception E){
+//			E.printStackTrace(); 
+//		}
+//		return false;
+//	}
 
 	private void findRedundancy(){
 		if(this.hits != null){
@@ -1447,35 +1444,35 @@ public class Database implements Serializable{
 		System.out.println(RNAfunctions.RNAInt2String(surrSequence));
 
 	}
-
-	public void printSolidSequence(Solid hit, ExtendedWriter EW){
-		int USlength = 300;
-		for(int i = 0; i < hit.hits.size(); i++){
-			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
-				int start = hit.hits.get(i).start;
-				int length = hit.hits.get(i).length;
-				int[] surrSequence = null;
-				if(start > 0 ){
-					int seqStart = start-USlength;
-					int seqEnd = start+length+USlength;
-					if(seqStart < 0)seqStart = 0;
-					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
-					surrSequence = Functions.getSubarray(this.sequence, seqStart, seqEnd);
-				}
-				else{
-					int seqStart = this.length+start-length-USlength;
-					int seqEnd = this.length+start+USlength;
-					if(seqStart < 0)seqStart = 0;
-					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
-					surrSequence = RNAfunctions.getComplementary(
-							Functions.getSubarray(this.sequence, seqStart, seqEnd));
-				}
-				EW.println(hit.getFastaHitInfo(i)+"_"+USlength+"_nt_upstreamAndDownstream");
-				EW.println(RNAfunctions.RNAInt2String(surrSequence));
-			}
-		}
-	}
-
+//
+//	public void printSolidSequence(Solid hit, ExtendedWriter EW){
+//		int USlength = 300;
+//		for(int i = 0; i < hit.hits.size(); i++){
+//			if(hit.hits.get(i).chromosome.compareTo(this.Name) == 0){
+//				int start = hit.hits.get(i).start;
+//				int length = hit.hits.get(i).length;
+//				int[] surrSequence = null;
+//				if(start > 0 ){
+//					int seqStart = start-USlength;
+//					int seqEnd = start+length+USlength;
+//					if(seqStart < 0)seqStart = 0;
+//					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
+//					surrSequence = Functions.getSubarray(this.sequence, seqStart, seqEnd);
+//				}
+//				else{
+//					int seqStart = this.length+start-length-USlength;
+//					int seqEnd = this.length+start+USlength;
+//					if(seqStart < 0)seqStart = 0;
+//					if(seqEnd >= this.sequence.length) seqEnd = this.sequence.length;
+//					surrSequence = RNAfunctions.getComplementary(
+//							Functions.getSubarray(this.sequence, seqStart, seqEnd));
+//				}
+//				EW.println(hit.getFastaHitInfo(i)+"_"+USlength+"_nt_upstreamAndDownstream");
+//				EW.println(RNAfunctions.RNAInt2String(surrSequence));
+//			}
+//		}
+//	}
+//
 
 
 	private void getChromosomeInfo(String[] columns){

@@ -9,5 +9,7 @@
 	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/jcommon-1.0.12.jar"/>
 	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/flanagan.jar"/>
 	<classpathentry kind="lib" path="/Users/johanreimegard/bin/jars/commons-math-1.2.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/General"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SequenceHandling"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
