@@ -109,7 +109,7 @@ public class Databases implements Serializable{
 		}
 
 
-		if(T.containsKey("-getPhasedInterVCFinfo")){
+		if(T.containsKey("-getPhasedVCFinfo")){
 			boolean readPhased = true;
 			String file = Functions.getValue(T, "-R", ".");
 			Databases  A= new Databases();
@@ -194,10 +194,93 @@ public class Databases implements Serializable{
 		}
 	
 		
-		if(T.containsKey("-printTransmissionPhasedGenome")){
+		if(T.containsKey("-printPhasedGenome")){
 			boolean readPhased = false;
 			String file = Functions.getValue(T, "-R", ".");
-			String VCF2 = Functions.getValue(T, "-transmissionPhasedVCF");
+			String VCF2 = Functions.getValue(T, "-phasedVCF");
+			Databases  A= new Databases();
+
+			String referenceName = new File(file).getName();
+			if(IOTools.fileExists(file))
+				A.loadDatabasesFile(file);
+			else
+				A.loadDatabasesFile(dir+"/"+file);
+
+			if(IOTools.fileExists(VCF2))
+				A.loadVCFFile(VCF2);
+			else
+				A.loadVCFFile(dir+"/"+VCF2);
+			A.addPhase(!readPhased);	
+
+			String sample = Functions.getValue(T, "-sample");
+			try{
+				ExtendedWriter EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phased_Mother.fa");
+				ExtendedWriter EW2 =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phased_Mother.changes");
+				A.printHaploGenome(EW,sample,false,EW2);
+				EW.flush();
+				EW.close();
+				EW2.flush();
+				EW2.close();
+
+
+				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phased_Father.fa");
+				EW2 =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phased_Father.changes");
+				A.printHaploGenome(EW,sample,true,EW2);
+				EW.flush();
+				EW.close();
+				EW2.flush();
+				EW2.close();
+				
+				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName);
+				EW2 =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".changedSites");
+				A.printHomozygousGenome(EW,EW2,sample);
+				EW.flush();
+				EW.close();
+				EW2.flush();
+				EW2.close();
+			
+				EW =  ExtendedWriter.getFileWriter(dir+"/"+sample+"."+referenceName+".phased.info");
+				EW.println("Files generated using java -Xmx20G -jar /glob/johanr/bin/HTStools.jar ");
+				EW.println("Flags to get this file");
+				for (Map.Entry<String,String> entry : T.entrySet()) {
+					String key = entry.getKey();
+					String value = entry.getValue();
+					EW.println(key+" "+value);
+					// do stuff
+				}
+				EW.println();
+				EW.println();
+				EW.println("Reference :"+ new File(file).getAbsolutePath());
+				EW.println("SNPfile :"+ new File(VCF2).getAbsolutePath());
+				EW.println();
+				EW.println("File with left phased information and non-phased heterozygous sites are replaced with N");
+				EW.println(dir+"/"+sample+"."+referenceName+".phaseByTransmission_Mother.fa");
+				EW.println();
+				EW.println("File with right phased information and non-phased heterozygous sites are replaced with N");
+				EW.println(dir+"/"+sample+"."+referenceName+".phaseByTransmission_Father.fa");
+				EW.println();
+				EW.println();
+				EW.println("File with where all heterozygous sites are replaced with N");
+				EW.println(dir+"/"+sample+"."+referenceName);
+				EW.println();
+				EW.println();
+				EW.println();
+				EW.println();
+				
+				EW.println("Date created: "+Functions.getDateTime());
+				EW.flush();
+				EW.close();
+
+
+			}catch(Exception E){
+				E.printStackTrace();
+			}
+		}
+
+		if(T.containsKey("-printPhasedGenome")){
+			boolean readPhased = false;
+			String file = Functions.getValue(T, "-R", ".");
+			String VCF2 = Functions.getValue(T, "-phasedVCF");
 			Databases  A= new Databases();
 
 			String referenceName = new File(file).getName();
@@ -281,7 +364,7 @@ public class Databases implements Serializable{
 		if(T.containsKey("-parseMpileUpToVCF")){
 			boolean readPhased = false;
 			String file = Functions.getValue(T, "-R", ".");
-			String VCF2 = Functions.getValue(T, "-transmissionPhasedVCF");
+			String VCF2 = Functions.getValue(T, "-phasedVCF");
 			Databases  A= new Databases();
 
 			String referenceName = new File(VCF2).getName();
