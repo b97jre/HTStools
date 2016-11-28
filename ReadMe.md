@@ -38,7 +38,7 @@ java -Xmx7g -jar HTStools.jar -p databases -getPhasedVCFinfo \
 ```
 Output will be a phased sample vcf file `SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf` with all heterozygous sites only.
 
-
+s
 
 ### Phasing the RNA files using the counts from the unphased RNA vcf files and matching that with the phased info from the DNA read-phased information 
 
@@ -47,7 +47,7 @@ java -Xmx7g -jar HTStools.jar -p databases -phaseVCFfile \
 -R <reference.fa> \
 -VCF  <reference.phased.vcf>\
 -unphased <sample.vcf>\
- -readPhased 
+-readPhased 
 ```
 Output will be a phased sample vcf file `sample.phased.vcf` 
 
@@ -81,13 +81,14 @@ java -Xmx20g -jar HTStools.jar -p databases -printPhasedGenome\
 -phasedVCF ReadPhased.vcf \
 -sample SAMPLE_NAME
 ```
-output is  `REFERENCE.sample.phased.mother.fa` and `REFERENCE.sample.phased.father.fa`
+output is `REFERENCE.sample.phased.mother.fa` and `REFERENCE.sample.phased.father.fa`
 
 
 ### Get phased vcf file based on mpileup file and phased vcf file 
 
  Use DNA phased heterozygous vcf file with RNA mpileupe files to get the RNA phased vcf files
 
+ ```bash
 java -Xmx20g -jar HTStools.jar -p databases -parseMpileUpToVCF 
 -R REFERENCE.fa \
 -phasedVCF SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf \
@@ -96,7 +97,6 @@ java -Xmx20g -jar HTStools.jar -p databases -parseMpileUpToVCF
 -mother sample_SAMPLE_NAME_phased_Mother \
 -father sample_SAMPLE_NAME_phased_Father 
 
-This will generate the phased RNA vcf file with the name 
-`Aligned.out.sorted.F_256.mpileup.SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf"
+Output is ` `Aligned.out.sorted.F_256.mpileup.SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf`
 
 
