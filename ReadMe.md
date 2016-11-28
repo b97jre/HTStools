@@ -23,6 +23,7 @@ java -Xmx7g -jar HTStools.jar -p databases -phaseVCFfile
 -unphased <sample.vcf> \
 -readPhased 
 ```
+
 Output will be a phased sample vcf file `sample.phased.vcf` 
 
 
@@ -38,7 +39,6 @@ java -Xmx7g -jar HTStools.jar -p databases -getPhasedVCFinfo \
 ```
 Output will be a phased sample vcf file `SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf` with all heterozygous sites only.
 
-s
 
 ### Phasing the RNA files using the counts from the unphased RNA vcf files and matching that with the phased info from the DNA read-phased information 
 
@@ -49,6 +49,8 @@ java -Xmx7g -jar HTStools.jar -p databases -phaseVCFfile \
 -unphased <sample.vcf>\
 -readPhased 
 ```
+
+
 Output will be a phased sample vcf file `sample.phased.vcf` 
 
 
@@ -96,7 +98,8 @@ java -Xmx20g -jar HTStools.jar -p databases -parseMpileUpToVCF
 -sample SAMPLE_NAME \
 -mother sample_SAMPLE_NAME_phased_Mother \
 -father sample_SAMPLE_NAME_phased_Father 
+```
 
-Output is ` `Aligned.out.sorted.F_256.mpileup.SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf`
+Output is `Aligned.out.sorted.F_256.mpileup.SAMPLE_NAME.heterozygous.Unified.output.raw.snps.indels.DNAreadPhased.vcf`
 
 
